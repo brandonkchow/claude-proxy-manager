@@ -286,25 +286,25 @@ pause
         Remove-Item $tempScript -ErrorAction SilentlyContinue
     }
     
-    # 9b: Install Chocolatey (if needed) and tmux
-    Write-Host "`n  [9b] Checking tmux..." -ForegroundColor Cyan
+    # 9b: Install psmux (Windows tmux alternative)
+    Write-Host "`n  [9b] Checking psmux..." -ForegroundColor Cyan
     try {
-        $tmuxVersion = tmux -V 2>$null
-        if ($tmuxVersion) {
-            Write-Host "  [OK] tmux already installed" -ForegroundColor Green
+        $psmuxVersion = psmux --version 2>$null
+        if ($psmuxVersion) {
+            Write-Host "  [OK] psmux already installed" -ForegroundColor Green
         } else {
             throw "Not found"
         }
     } catch {
-        Write-Host "  [!] tmux not found" -ForegroundColor Yellow
+        Write-Host "  [!] psmux not found" -ForegroundColor Yellow
         
         # Check if Chocolatey is installed
         try {
             $chocoVersion = choco --version 2>$null
             if ($chocoVersion) {
-                Write-Host "  [OK] Chocolatey detected, installing tmux..." -ForegroundColor Cyan
-                choco install tmux -y
-                Write-Host "  [OK] tmux installed" -ForegroundColor Green
+                Write-Host "  [OK] Chocolatey detected, installing psmux..." -ForegroundColor Cyan
+                choco install psmux -y
+                Write-Host "  [OK] psmux installed" -ForegroundColor Green
             } else {
                 throw "Chocolatey not found"
             }
@@ -317,21 +317,21 @@ pause
 Set-ExecutionPolicy Bypass -Scope Process -Force
 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
 iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
-choco install tmux -y
-Write-Host 'Chocolatey and tmux installed successfully!' -ForegroundColor Green
+choco install psmux -y
+Write-Host 'Chocolatey and psmux installed successfully!' -ForegroundColor Green
 pause
 "@
-            $tempScript = "$env:TEMP\install-choco-tmux.ps1"
+            $tempScript = "$env:TEMP\install-choco-psmux.ps1"
             $chocoInstallScript | Set-Content $tempScript
             
             try {
                 Start-Process powershell -ArgumentList "-ExecutionPolicy Bypass -File `"$tempScript`"" -Verb RunAs -Wait
-                Write-Host "  [OK] Chocolatey and tmux installed" -ForegroundColor Green
+                Write-Host "  [OK] Chocolatey and psmux installed" -ForegroundColor Green
             } catch {
                 Write-Host "  [!] Installation cancelled or failed" -ForegroundColor Yellow
                 Write-Host "      You can install manually later:" -ForegroundColor Gray
                 Write-Host "      1. Install Chocolatey: https://chocolatey.org/install" -ForegroundColor Gray
-                Write-Host "      2. Run: choco install tmux" -ForegroundColor Gray
+                Write-Host "      2. Run: choco install psmux" -ForegroundColor Gray
             }
             
             Remove-Item $tempScript -ErrorAction SilentlyContinue
@@ -369,18 +369,18 @@ function Start-HappyPaid {
     happy
 }
 
-# Dual tmux session setup
+# Dual psmux session setup
 function Start-DualSessions {
-    Write-Host "Setting up dual tmux sessions..." -ForegroundColor Cyan
+    Write-Host "Setting up dual psmux sessions..." -ForegroundColor Cyan
     
     # Start FREE session
     Write-Host "  Creating FREE session (happy-free)..." -ForegroundColor Yellow
-    Start-Process powershell -ArgumentList "-NoExit", "-Command", "tmux new -s happy-free 'powershell -NoExit -Command `"start-proxy; Start-HappyFree`"'"
+    Start-Process powershell -ArgumentList "-NoExit", "-Command", "psmux new -s happy-free 'powershell -NoExit -Command `"start-proxy; Start-HappyFree`"'"
     Start-Sleep -Seconds 2
     
     # Start PAID session
     Write-Host "  Creating PAID session (happy-paid)..." -ForegroundColor Yellow
-    Start-Process powershell -ArgumentList "-NoExit", "-Command", "tmux new -s happy-paid 'powershell -NoExit -Command `"claude-paid; Start-HappyPaid`"'"
+    Start-Process powershell -ArgumentList "-NoExit", "-Command", "psmux new -s happy-paid 'powershell -NoExit -Command `"claude-paid; Start-HappyPaid`"'"
     
     Write-Host "`n  [OK] Dual sessions created!" -ForegroundColor Green
     Write-Host "      - happy-free: Antigravity proxy" -ForegroundColor Gray
