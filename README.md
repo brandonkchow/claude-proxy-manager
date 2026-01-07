@@ -19,6 +19,7 @@ That's it! The installer will:
 - ✅ Configure priority order
 - ✅ Set up auto-start
 - ✅ Add PowerShell functions
+- ✅ **Optional**: Install SSH, tmux, and HappyCoder for remote access
 
 > [!CAUTION]
 > **Thinking Model Incompatibility**

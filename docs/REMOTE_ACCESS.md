@@ -4,6 +4,9 @@ Complete guide for using Claude Proxy Manager remotely via SSH, tmux, and mobile
 
 ## SSH Setup
 
+> [!TIP]
+> The installer can set this up automatically! When running the installer, choose "Yes" for Step 9 (Remote Access Setup).
+
 ### Prerequisites
 - SSH server running on your Windows machine
 - SSH client on remote device (built-in on Mac/Linux/iOS)
@@ -33,6 +36,9 @@ ssh bchow@192.168.1.100
 ```
 
 ## tmux for Persistent Sessions
+
+> [!TIP]
+> The installer can install tmux automatically! Choose "Yes" for Step 9 (Remote Access Setup).
 
 ### Why tmux?
 - Keep Claude sessions running when you disconnect
@@ -303,6 +309,9 @@ tmux attach -s claude
 
 ## HappyCoder Integration
 
+> [!TIP]
+> The installer can set up HappyCoder automatically! Choose "Yes" for Step 9 (Remote Access Setup) to install HappyCoder CLI and create convenient aliases.
+
 ### What is HappyCoder?
 
 HappyCoder is a **free, open-source mobile client** for Claude Code that enables real-time synchronization between your desktop and mobile device. Perfect for continuing your coding sessions anywhere!
@@ -317,7 +326,10 @@ HappyCoder is a **free, open-source mobile client** for Claude Code that enables
 
 ### Installation
 
-#### 1. Install HappyCoder CLI
+> [!NOTE]
+> If you chose "Yes" for remote access setup during installation, HappyCoder CLI is already installed and aliases are configured!
+
+#### 1. Install HappyCoder CLI (Manual)
 
 ```powershell
 npm install -g happy-coder
