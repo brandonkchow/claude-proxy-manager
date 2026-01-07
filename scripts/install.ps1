@@ -303,8 +303,16 @@ pause
             $chocoVersion = choco --version 2>$null
             if ($chocoVersion) {
                 Write-Host "  [OK] Chocolatey detected, installing psmux..." -ForegroundColor Cyan
-                choco install psmux -y
-                Write-Host "  [OK] psmux installed" -ForegroundColor Green
+                
+                # Create elevated script for psmux install
+                $installScript = "choco install psmux -y; Read-Host 'PsMux Installed! Press Enter to continue...'"
+                
+                try {
+                    Start-Process powershell -ArgumentList "-Command", $installScript -Verb RunAs -Wait
+                    Write-Host "  [OK] psmux installation completed" -ForegroundColor Green
+                } catch {
+                    Write-Host "  [!] Installation cancelled or failed" -ForegroundColor Yellow
+                }
             } else {
                 throw "Chocolatey not found"
             }
