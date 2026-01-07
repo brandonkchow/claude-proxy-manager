@@ -1,0 +1,53 @@
+# User-specific files (DO NOT COMMIT)
+settings.json
+priority.json
+*.local.json
+
+# Account tokens and credentials
+accounts.json
+config.json
+.claude/
+.config/antigravity-proxy/
+
+# Node modules
+node_modules/
+package-lock.json
+
+# Logs
+*.log
+npm-debug.log*
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Build outputs
+dist/
+build/
+*.exe
+
+# PowerShell specific
+*.ps1xml
+
+# Backup files
+*.backup
+*.bak
+*~
+
+# Test files
+test-results/
+coverage/

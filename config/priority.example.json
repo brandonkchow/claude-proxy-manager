@@ -1,0 +1,23 @@
+{
+    "priority": [
+        {
+            "name": "Antigravity Account 1",
+            "type": "antigravity",
+            "email": "user@example.com",
+            "enabled": true
+        },
+        {
+            "name": "Antigravity Account 2",
+            "type": "antigravity",
+            "email": "user2@example.com",
+            "enabled": true
+        },
+        {
+            "name": "Claude Code Paid",
+            "type": "claude-code",
+            "enabled": true
+        }
+    ],
+    "currentMode": "auto",
+    "autoDetect": true
+}
