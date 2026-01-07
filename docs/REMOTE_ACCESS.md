@@ -203,7 +203,50 @@ tmux new -s claude
 
 If you're outside your home network:
 
-### Option 1: SSH Tunnel
+### Option 1: Tailscale (Recommended)
+
+**Why Tailscale?**
+- Zero configuration
+- Works from anywhere
+- Secure encrypted tunnel
+- No port forwarding needed
+- Free for personal use
+
+**Setup**:
+1. Install Tailscale on Windows machine: https://tailscale.com/download
+2. Install Tailscale on mobile device
+3. Both devices join same Tailscale network
+
+**Usage**:
+```bash
+# Get your Windows Tailscale IP
+tailscale ip
+# Example: 100.101.102.103
+
+# SSH from anywhere in the world
+ssh user@100.101.102.103
+
+# Or use with HappyCoder
+# HappyCoder uses its own relay, but Tailscale ensures
+# your Windows machine is always reachable
+```
+
+**With tmux + Tailscale**:
+```bash
+# At home: Start session
+ssh user@100.101.102.103
+tmux new -s claude
+start-proxy
+claude
+# Ctrl+B, D to detach
+
+# In another city: Resume session
+ssh user@100.101.102.103
+tmux attach -s claude
+# Continue exactly where you left off!
+```
+
+### Option 2: SSH Tunnel
 
 ```bash
 # Forward local port 8081 to remote proxy
@@ -292,6 +335,20 @@ npm install -g happy-coder
 ### Setup with Claude Proxy Manager
 
 HappyCoder works **perfectly** with Claude Proxy Manager! Here's how to set it up:
+
+> [!CAUTION]
+> **Thinking Model Incompatibility Warning**
+> 
+> Do NOT switch between paid Claude Code and Antigravity proxy in the same HappyCoder session. The proxy cannot process "thinking blocks" from Claude's extended thinking models.
+> 
+> **If you need to switch modes**:
+> 1. Exit current conversation: `/exit`
+> 2. Stop HappyCoder (Ctrl+C)
+> 3. Switch mode: `claude-free` or `claude-paid`
+> 4. Restart HappyCoder
+> 5. Scan new QR code
+> 
+> **Best Practice**: Choose one mode and stick with it for the entire session.
 
 #### Option 1: Use with Antigravity Proxy (Recommended)
 

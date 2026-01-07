@@ -20,6 +20,20 @@ That's it! The installer will:
 - ✅ Set up auto-start
 - ✅ Add PowerShell functions
 
+> [!CAUTION]
+> **Thinking Model Incompatibility**
+> 
+> Do NOT switch between paid Claude Code and Antigravity proxy in the same conversation. Claude Code's thinking models (`-thinking` suffix) are incompatible with the Antigravity proxy.
+> 
+> **Why**: Antigravity proxy cannot process "thinking blocks" from Claude's extended thinking models. If you switch modes mid-conversation, you'll get API 400 errors.
+> 
+> **Solution**: Start a fresh conversation when switching modes:
+> - Exit current conversation: `/exit` in Claude CLI
+> - Switch modes: `claude-free` or `claude-paid`
+> - Start new conversation: `claude`
+> 
+> **Best Practice**: Set your preferred mode as default priority to avoid switching.
+
 ## 💡 What is This?
 
 Claude Proxy Manager lets you:
