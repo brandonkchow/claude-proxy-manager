@@ -383,12 +383,12 @@ function Start-DualSessions {
     
     # Start FREE session
     Write-Host "  Creating FREE session (happy-free)..." -ForegroundColor Yellow
-    Start-Process powershell -ArgumentList "-NoExit", "-Command", "psmux new -s happy-free 'powershell -NoExit -Command `"start-proxy; Start-HappyFree`"'"
+    Start-Process powershell -ArgumentList "-NoExit", "-Command", "psmux new -s happy-free 'powershell -NoExit -Command ``"start-proxy; Start-HappyFree``"'"
     Start-Sleep -Seconds 2
     
     # Start PAID session
     Write-Host "  Creating PAID session (happy-paid)..." -ForegroundColor Yellow
-    Start-Process powershell -ArgumentList "-NoExit", "-Command", "psmux new -s happy-paid 'powershell -NoExit -Command `"claude-paid; Start-HappyPaid`"'"
+    Start-Process powershell -ArgumentList "-NoExit", "-Command", "psmux new -s happy-paid 'powershell -NoExit -Command ``"claude-paid; Start-HappyPaid``"'"
     
     Write-Host "`n  [OK] Dual sessions created!" -ForegroundColor Green
     Write-Host "      - happy-free: Antigravity proxy" -ForegroundColor Gray
