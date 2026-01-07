@@ -222,26 +222,33 @@ if (Prompt-YesNo "Install remote access tools?" $false) {
     
     # 9a: Enable Windows OpenSSH Server
     Write-Host "`n  [9a] Checking OpenSSH Server..." -ForegroundColor Cyan
-    $sshService = Get-WindowsCapability -Online | Where-Object Name -like 'OpenSSH.Server*'
     
-    if ($sshService.State -ne "Installed") {
-        Write-Host "  Installing OpenSSH Server..." -ForegroundColor Yellow
-        try {
-            Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0
-            Start-Service sshd
-            Set-Service -Name sshd -StartupType 'Automatic'
-            
-            # Configure firewall
-            if (-not (Get-NetFirewallRule -Name "OpenSSH-Server-In-TCP" -ErrorAction SilentlyContinue)) {
-                New-NetFirewallRule -Name sshd -DisplayName 'OpenSSH Server (sshd)' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22 | Out-Null
+    try {
+        $sshService = Get-WindowsCapability -Online -ErrorAction Stop | Where-Object Name -like 'OpenSSH.Server*'
+        
+        if ($sshService.State -ne "Installed") {
+            Write-Host "  Installing OpenSSH Server..." -ForegroundColor Yellow
+            try {
+                Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0
+                Start-Service sshd
+                Set-Service -Name sshd -StartupType 'Automatic'
+                
+                # Configure firewall
+                if (-not (Get-NetFirewallRule -Name "OpenSSH-Server-In-TCP" -ErrorAction SilentlyContinue)) {
+                    New-NetFirewallRule -Name sshd -DisplayName 'OpenSSH Server (sshd)' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22 | Out-Null
+                }
+                
+                Write-Host "  [OK] OpenSSH Server installed and started" -ForegroundColor Green
+            } catch {
+                Write-Host "  [!] Could not install OpenSSH Server (may require admin)" -ForegroundColor Yellow
             }
-            
-            Write-Host "  [OK] OpenSSH Server installed and started" -ForegroundColor Green
-        } catch {
-            Write-Host "  [!] Could not install OpenSSH Server (may require admin)" -ForegroundColor Yellow
+        } else {
+            Write-Host "  [OK] OpenSSH Server already installed" -ForegroundColor Green
         }
-    } else {
-        Write-Host "  [OK] OpenSSH Server already installed" -ForegroundColor Green
+    } catch {
+        Write-Host "  [!] Cannot check OpenSSH (requires admin privileges)" -ForegroundColor Yellow
+        Write-Host "      To install manually: Run PowerShell as Admin, then:" -ForegroundColor Gray
+        Write-Host "      Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0" -ForegroundColor Gray
     }
     
     # 9b: Install tmux
