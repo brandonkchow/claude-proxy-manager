@@ -220,6 +220,200 @@ Write-Host "  Set up SSH, tmux, and HappyCoder for mobile/remote access?" -Foreg
 
 if (Prompt-YesNo "Install remote access tools?" $false) {
     
+    # 9a: Enable Windows OpenSSH Server (with UAC elevation)
+    Write-Host "`n  [9a] Checking OpenSSH Server..." -ForegroundColor Cyan
+    
+    try {
+        $sshService = Get-WindowsCapability -Online -ErrorAction Stop | Where-Object Name -like 'OpenSSH.Server*'
+        
+        if ($sshService.State -ne "Installed") {
+            Write-Host "  OpenSSH Server not installed. Requesting admin privileges..." -ForegroundColor Yellow
+            
+            # Create elevated script to install OpenSSH
+            $elevatedScript = @"
+Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0
+Start-Service sshd
+Set-Service -Name sshd -StartupType 'Automatic'
+if (-not (Get-NetFirewallRule -Name 'OpenSSH-Server-In-TCP' -ErrorAction SilentlyContinue)) {
+    New-NetFirewallRule -Name sshd -DisplayName 'OpenSSH Server (sshd)' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22 | Out-Null
+}
+Write-Host 'OpenSSH Server installed successfully!' -ForegroundColor Green
+pause
+"@
+            
+            # Save to temp file
+            $tempScript = "$env:TEMP\install-openssh.ps1"
+            $elevatedScript | Set-Content $tempScript
+            
+            # Run with elevation
+            try {
+                Start-Process powershell -ArgumentList "-ExecutionPolicy Bypass -File `"$tempScript`"" -Verb RunAs -Wait
+                Write-Host "  [OK] OpenSSH Server installed" -ForegroundColor Green
+            } catch {
+                Write-Host "  [!] User cancelled elevation or installation failed" -ForegroundColor Yellow
+            }
+            
+            # Cleanup
+            Remove-Item $tempScript -ErrorAction SilentlyContinue
+        } else {
+            Write-Host "  [OK] OpenSSH Server already installed" -ForegroundColor Green
+        }
+    } catch {
+        Write-Host "  [!] Cannot check OpenSSH (requires admin privileges)" -ForegroundColor Yellow
+        Write-Host "      Attempting to install with elevation..." -ForegroundColor Cyan
+        
+        # Try elevation anyway
+        $elevatedScript = @"
+Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0
+Start-Service sshd
+Set-Service -Name sshd -StartupType 'Automatic'
+if (-not (Get-NetFirewallRule -Name 'OpenSSH-Server-In-TCP' -ErrorAction SilentlyContinue)) {
+    New-NetFirewallRule -Name sshd -DisplayName 'OpenSSH Server (sshd)' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22 | Out-Null
+}
+Write-Host 'OpenSSH Server installed successfully!' -ForegroundColor Green
+pause
+"@
+        $tempScript = "$env:TEMP\install-openssh.ps1"
+        $elevatedScript | Set-Content $tempScript
+        
+        try {
+            Start-Process powershell -ArgumentList "-ExecutionPolicy Bypass -File `"$tempScript`"" -Verb RunAs -Wait
+            Write-Host "  [OK] OpenSSH Server installed" -ForegroundColor Green
+        } catch {
+            Write-Host "  [!] Installation cancelled or failed" -ForegroundColor Yellow
+        }
+        
+        Remove-Item $tempScript -ErrorAction SilentlyContinue
+    }
+    
+    # 9b: Install Chocolatey (if needed) and tmux
+    Write-Host "`n  [9b] Checking tmux..." -ForegroundColor Cyan
+    try {
+        $tmuxVersion = tmux -V 2>$null
+        if ($tmuxVersion) {
+            Write-Host "  [OK] tmux already installed" -ForegroundColor Green
+        } else {
+            throw "Not found"
+        }
+    } catch {
+        Write-Host "  [!] tmux not found" -ForegroundColor Yellow
+        
+        # Check if Chocolatey is installed
+        try {
+            $chocoVersion = choco --version 2>$null
+            if ($chocoVersion) {
+                Write-Host "  [OK] Chocolatey detected, installing tmux..." -ForegroundColor Cyan
+                choco install tmux -y
+                Write-Host "  [OK] tmux installed" -ForegroundColor Green
+            } else {
+                throw "Chocolatey not found"
+            }
+        } catch {
+            Write-Host "  [!] Chocolatey not installed" -ForegroundColor Yellow
+            Write-Host "  Installing Chocolatey..." -ForegroundColor Cyan
+            
+            # Install Chocolatey with elevation
+            $chocoInstallScript = @"
+Set-ExecutionPolicy Bypass -Scope Process -Force
+[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+choco install tmux -y
+Write-Host 'Chocolatey and tmux installed successfully!' -ForegroundColor Green
+pause
+"@
+            $tempScript = "$env:TEMP\install-choco-tmux.ps1"
+            $chocoInstallScript | Set-Content $tempScript
+            
+            try {
+                Start-Process powershell -ArgumentList "-ExecutionPolicy Bypass -File `"$tempScript`"" -Verb RunAs -Wait
+                Write-Host "  [OK] Chocolatey and tmux installed" -ForegroundColor Green
+            } catch {
+                Write-Host "  [!] Installation cancelled or failed" -ForegroundColor Yellow
+                Write-Host "      You can install manually later:" -ForegroundColor Gray
+                Write-Host "      1. Install Chocolatey: https://chocolatey.org/install" -ForegroundColor Gray
+                Write-Host "      2. Run: choco install tmux" -ForegroundColor Gray
+            }
+            
+            Remove-Item $tempScript -ErrorAction SilentlyContinue
+        }
+    }
+    
+    # 9c: Install HappyCoder CLI
+    Write-Host "`n  [9c] Checking HappyCoder CLI..." -ForegroundColor Cyan
+    try {
+        $happyVersion = happy --version 2>$null
+        if ($happyVersion) {
+            Write-Host "  [OK] HappyCoder CLI already installed" -ForegroundColor Green
+        } else {
+            throw "Not found"
+        }
+    } catch {
+        Write-Host "  Installing HappyCoder CLI..." -ForegroundColor Cyan
+        npm install -g happy-coder
+        Write-Host "  [OK] HappyCoder CLI installed" -ForegroundColor Green
+    }
+    
+    # 9d: Create dual-session aliases
+    Write-Host "`n  [9d] Creating dual-session aliases..." -ForegroundColor Cyan
+    
+    $remoteAliases = @"
+
+# HappyCoder Dual-Session Setup (for easy mode switching)
+function Start-HappyFree {
+    Write-Host "Starting HappyCoder with Antigravity proxy..." -ForegroundColor Cyan
+    happy --claude-env ANTHROPIC_AUTH_TOKEN=test --claude-env ANTHROPIC_BASE_URL=http://localhost:8081
+}
+
+function Start-HappyPaid {
+    Write-Host "Starting HappyCoder with paid Claude Code..." -ForegroundColor Cyan
+    happy
+}
+
+# Dual tmux session setup
+function Start-DualSessions {
+    Write-Host "Setting up dual tmux sessions..." -ForegroundColor Cyan
+    
+    # Start FREE session
+    Write-Host "  Creating FREE session (happy-free)..." -ForegroundColor Yellow
+    Start-Process powershell -ArgumentList "-NoExit", "-Command", "tmux new -s happy-free 'powershell -NoExit -Command `"start-proxy; Start-HappyFree`"'"
+    Start-Sleep -Seconds 2
+    
+    # Start PAID session
+    Write-Host "  Creating PAID session (happy-paid)..." -ForegroundColor Yellow
+    Start-Process powershell -ArgumentList "-NoExit", "-Command", "tmux new -s happy-paid 'powershell -NoExit -Command `"claude-paid; Start-HappyPaid`"'"
+    
+    Write-Host "`n  [OK] Dual sessions created!" -ForegroundColor Green
+    Write-Host "      - happy-free: Antigravity proxy" -ForegroundColor Gray
+    Write-Host "      - happy-paid: Claude Code paid" -ForegroundColor Gray
+    Write-Host "`n  Scan both QR codes in HappyCoder app to switch between them!" -ForegroundColor Cyan
+}
+
+Set-Alias -Name happy-free -Value Start-HappyFree
+Set-Alias -Name happy-paid -Value Start-HappyPaid
+Set-Alias -Name dual-sessions -Value Start-DualSessions
+"@
+    
+    # Add to profile if not already there
+    $profileContent = Get-Content $profilePath -Raw -ErrorAction SilentlyContinue
+    if ($profileContent -notmatch "HappyCoder Dual-Session") {
+        Add-Content -Path $profilePath -Value $remoteAliases
+        Write-Host "  [OK] Dual-session aliases added to profile" -ForegroundColor Green
+    } else {
+        Write-Host "  [OK] Dual-session aliases already configured" -ForegroundColor Green
+    }
+    
+    Write-Host "`n  [OK] Remote access setup complete!" -ForegroundColor Green
+    Write-Host "`n  New commands available:" -ForegroundColor Cyan
+    Write-Host "    happy-free       Start HappyCoder with Antigravity" -ForegroundColor White
+    Write-Host "    happy-paid       Start HappyCoder with Claude Code" -ForegroundColor White
+    Write-Host "    dual-sessions    Start both sessions for easy switching" -ForegroundColor White
+    
+} else {
+    Write-Host "  [SKIP] Remote access setup skipped" -ForegroundColor Yellow
+    Write-Host "  You can run this later with: .\scripts\install-remote.ps1" -ForegroundColor Gray
+}
+
+    
     # 9a: Enable Windows OpenSSH Server
     Write-Host "`n  [9a] Checking OpenSSH Server..." -ForegroundColor Cyan
     
