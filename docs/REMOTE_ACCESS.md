@@ -350,6 +350,61 @@ HappyCoder works **perfectly** with Claude Proxy Manager! Here's how to set it u
 > 
 > **Best Practice**: Choose one mode and stick with it for the entire session.
 
+#### Switching Modes Remotely (Out of Town)
+
+If you're away from your Windows machine and want to switch modes:
+
+**Option 1: SSH + Restart HappyCoder** (Recommended)
+```bash
+# 1. SSH into your Windows machine (via Tailscale)
+ssh user@100.x.x.x
+
+# 2. Find and stop running HappyCoder
+ps aux | grep happy
+kill <process-id>
+
+# 3. Switch mode
+claude-free  # or claude-paid
+
+# 4. Restart HappyCoder
+happy-proxy  # or happy
+
+# 5. Scan new QR code on mobile
+# 6. Continue with new mode!
+```
+
+**Option 2: Use Two Separate Sessions**
+```powershell
+# On Windows, create two tmux sessions:
+
+# Session 1: FREE mode
+tmux new -s happy-free
+start-proxy
+happy-proxy
+# Ctrl+B, D to detach
+
+# Session 2: PAID mode  
+tmux new -s happy-paid
+claude-paid
+happy
+# Ctrl+B, D to detach
+
+# From mobile:
+# - Scan QR from happy-free for Antigravity
+# - Scan QR from happy-paid for Claude Code
+# - Switch between them in HappyCoder app!
+```
+
+**Option 3: Remote Desktop** (Easiest)
+```
+# Use Windows Remote Desktop or Chrome Remote Desktop
+# 1. Connect to Windows machine
+# 2. Stop HappyCoder (Ctrl+C)
+# 3. Switch mode in terminal
+# 4. Restart HappyCoder
+# 5. Scan new QR code
+```
+
 #### Option 1: Use with Antigravity Proxy (Recommended)
 
 ```powershell
