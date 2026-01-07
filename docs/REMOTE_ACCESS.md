@@ -35,45 +35,38 @@ ssh username@your-windows-ip
 ssh bchow@192.168.1.100
 ```
 
-## tmux for Persistent Sessions
+## psmux for Persistent Sessions
 
 > [!TIP]
-> The installer can install tmux automatically! Choose "Yes" for Step 9 (Remote Access Setup).
+> The installer can install psmux automatically! Choose "Yes" for Step 9 (Remote Access Setup).
 
-### Why tmux?
+### Why psmux?
+`psmux` is a native Windows terminal multiplexer that works exactly like `tmux`. It allows you to:
 - Keep Claude sessions running when you disconnect
 - Resume exactly where you left off
-- Multiple windows for different projects
+- Manage multiple sessions (e.g., free vs paid)
 
-### Install tmux on Windows
+### Installation
+
+If you didn't use the installer, you can install it via Chocolatey:
 
 ```powershell
-# Using Chocolatey
-choco install tmux
-
-# Or using Scoop
-scoop install tmux
+choco install psmux -y
 ```
 
-### Basic tmux Workflow
+### Basic Commands (Same as tmux!)
 
-```bash
-# Start new session
-tmux new -s claude
+| Action | Command |
+|--------|---------|
+| Start new session | `psmux` |
+| Start named session | `psmux new -s my-session` |
+| Detach from session | `Ctrl+b` then `d` |
+| List sessions | `psmux ls` |
+| Attach to session | `psmux attach -t my-session` |
+| Kill session | `psmux kill-session -t my-session` |
 
-# Inside tmux, start Claude
-claude
-
-# Detach from session (keeps running)
-# Press: Ctrl+B, then D
-
-# List sessions
-tmux ls
-
-# Reattach to session
-tmux attach -s claude
-```
-
+> [!NOTE]
+> `psmux` installs a `tmux` alias, so you can just type `tmux` if you prefer!
 ### tmux Cheat Sheet
 
 ```
