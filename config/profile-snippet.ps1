@@ -199,7 +199,36 @@ function Start-HappyPaid {
 }
 
 function Start-DualSessions {
+    param(
+        [string]$WorkingDirectory = (Get-Location).Path,
+        [switch]$UseSymlinks  # Creates symlinks for distinct session names in HappyCoder app
+    )
+
     Write-Host "Setting up dual HappyCoder sessions with QR codes..." -ForegroundColor Cyan
+    Write-Host "  Working directory: $WorkingDirectory" -ForegroundColor Gray
+
+    # Create symlinks for unique session names (optional)
+    $freeDir = $WorkingDirectory
+    $paidDir = $WorkingDirectory
+
+    if ($UseSymlinks) {
+        $baseName = Split-Path -Leaf $WorkingDirectory
+        $parentDir = Split-Path -Parent $WorkingDirectory
+        $freeDir = Join-Path $parentDir "$baseName-FREE"
+        $paidDir = Join-Path $parentDir "$baseName-PAID"
+
+        # Create symlinks if they don't exist
+        if (-not (Test-Path $freeDir)) {
+            Write-Host "  Creating FREE symlink: $freeDir" -ForegroundColor Gray
+            New-Item -ItemType SymbolicLink -Path $freeDir -Target $WorkingDirectory -ErrorAction SilentlyContinue | Out-Null
+        }
+        if (-not (Test-Path $paidDir)) {
+            Write-Host "  Creating PAID symlink: $paidDir" -ForegroundColor Gray
+            New-Item -ItemType SymbolicLink -Path $paidDir -Target $WorkingDirectory -ErrorAction SilentlyContinue | Out-Null
+        }
+
+        Write-Host "  Sessions will appear as '$baseName-FREE' and '$baseName-PAID' in HappyCoder app" -ForegroundColor Green
+    }
 
     # Ensure proxy is running first (for FREE mode)
     Write-Host "  Ensuring Antigravity proxy is running..." -ForegroundColor Cyan
@@ -227,26 +256,44 @@ function Start-DualSessions {
         Write-Host "  Proxy already running!" -ForegroundColor Green
     }
 
-    # Open FREE mode window
+    # Open FREE mode window with GREEN theme
     Write-Host "  Opening FREE mode window (Antigravity)..." -ForegroundColor Yellow
     Start-Process powershell -ArgumentList "-NoExit", "-Command", @"
-Write-Host 'HappyCoder - FREE Mode (Antigravity Proxy)' -ForegroundColor Cyan
-Write-Host 'Scan the QR code below with HappyCoder app' -ForegroundColor Yellow
+Set-Location '$freeDir'
+`$Host.UI.RawUI.WindowTitle = '[FREE] HappyCoder - Antigravity Proxy'
+Write-Host '========================================================' -ForegroundColor Green
+Write-Host '                                                        ' -ForegroundColor Green
+Write-Host '            FREE MODE - ANTIGRAVITY PROXY               ' -ForegroundColor Green
+Write-Host '                                                        ' -ForegroundColor Green
+Write-Host '========================================================' -ForegroundColor Green
+Write-Host ''
+Write-Host 'Scan the QR code below with HappyCoder mobile app' -ForegroundColor Yellow
+Write-Host 'Directory: $freeDir' -ForegroundColor Gray
 Write-Host ''
 happy --claude-env ANTHROPIC_AUTH_TOKEN=test --claude-env ANTHROPIC_BASE_URL=http://localhost:8081
 "@
 
-    # Open PAID mode window
+    # Open PAID mode window with BLUE theme
     Write-Host "  Opening PAID mode window (Claude Code)..." -ForegroundColor Yellow
     Start-Process powershell -ArgumentList "-NoExit", "-Command", @"
-Write-Host 'HappyCoder - PAID Mode (Claude Code)' -ForegroundColor Cyan
-Write-Host 'Scan the QR code below with HappyCoder app' -ForegroundColor Yellow
+Set-Location '$paidDir'
+`$Host.UI.RawUI.WindowTitle = '[PAID] HappyCoder - Claude Code'
+Write-Host '========================================================' -ForegroundColor Blue
+Write-Host '                                                        ' -ForegroundColor Blue
+Write-Host '              PAID MODE - CLAUDE CODE                   ' -ForegroundColor Blue
+Write-Host '                                                        ' -ForegroundColor Blue
+Write-Host '========================================================' -ForegroundColor Blue
+Write-Host ''
+Write-Host 'Scan the QR code below with HappyCoder mobile app' -ForegroundColor Yellow
+Write-Host 'Directory: $paidDir' -ForegroundColor Gray
 Write-Host ''
 happy
 "@
 
     Write-Host "`n  [OK] Two HappyCoder windows opened!" -ForegroundColor Green
-    Write-Host "  Scan the QR codes in each window with your mobile app" -ForegroundColor Cyan
+    Write-Host "  GREEN window = FREE mode (Antigravity)" -ForegroundColor Green
+    Write-Host "  BLUE window = PAID mode (Claude Code)" -ForegroundColor Blue
+    Write-Host "`n  Scan the QR codes in each window with your mobile app" -ForegroundColor Cyan
     Write-Host "  You can now switch between FREE and PAID modes in HappyCoder!" -ForegroundColor Green
 }
 
