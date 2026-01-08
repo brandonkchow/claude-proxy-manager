@@ -151,5 +151,108 @@ Set-Alias -Name init-priority -Value Initialize-ClaudePriority
 Set-Alias -Name get-priority -Value Get-ClaudePriority
 Set-Alias -Name set-priority -Value Set-ClaudePriority
 
+# HappyCoder Dual-Session Functions
+function Start-HappyFree {
+    Write-Host "Starting HappyCoder with Antigravity proxy..." -ForegroundColor Cyan
+
+    # Ensure Proxy is Running
+    $proxyRunning = Test-NetConnection -ComputerName localhost -Port 8081 -InformationLevel Quiet -WarningAction SilentlyContinue
+    if (-not $proxyRunning) {
+        Write-Host "Starting Antigravity Proxy in background..." -ForegroundColor Yellow
+        Start-Job -ScriptBlock {
+            $env:PORT = '8081'
+            antigravity-claude-proxy start --fallback
+        } | Out-Null
+
+        # Wait for proxy to be ready
+        Write-Host "Waiting for proxy to start..." -ForegroundColor Yellow
+        $maxAttempts = 15
+        $attempt = 0
+        do {
+            Start-Sleep -Seconds 1
+            $attempt++
+            $proxyRunning = Test-NetConnection -ComputerName localhost -Port 8081 -InformationLevel Quiet -WarningAction SilentlyContinue
+            if ($proxyRunning) {
+                Write-Host "Proxy is ready!" -ForegroundColor Green
+                break
+            }
+        } while ($attempt -lt $maxAttempts)
+
+        if (-not $proxyRunning) {
+            Write-Host "Warning: Proxy may not have started properly" -ForegroundColor Yellow
+        }
+    } else {
+        Write-Host "Proxy is already running." -ForegroundColor Green
+    }
+
+    # Start HappyCoder
+    Write-Host "Launching HappyCoder... Scan the QR code with your mobile app!" -ForegroundColor Cyan
+    Write-Host ""
+    happy --claude-env ANTHROPIC_AUTH_TOKEN=test --claude-env ANTHROPIC_BASE_URL=http://localhost:8081
+}
+
+function Start-HappyPaid {
+    Write-Host "Starting HappyCoder with paid Claude Code..." -ForegroundColor Cyan
+    Write-Host "Scan the QR code below with your mobile app!" -ForegroundColor Cyan
+    Write-Host ""
+    happy
+}
+
+function Start-DualSessions {
+    Write-Host "Setting up dual HappyCoder sessions with QR codes..." -ForegroundColor Cyan
+
+    # Ensure proxy is running first (for FREE mode)
+    Write-Host "  Ensuring Antigravity proxy is running..." -ForegroundColor Cyan
+    $proxyRunning = Test-NetConnection -ComputerName localhost -Port 8081 -InformationLevel Quiet -WarningAction SilentlyContinue
+    if (-not $proxyRunning) {
+        Write-Host "  Starting proxy in background..." -ForegroundColor Yellow
+        Start-Job -ScriptBlock {
+            $env:PORT = '8081'
+            antigravity-claude-proxy start --fallback
+        } | Out-Null
+
+        # Wait for proxy
+        $maxAttempts = 15
+        $attempt = 0
+        do {
+            Start-Sleep -Seconds 1
+            $attempt++
+            $proxyRunning = Test-NetConnection -ComputerName localhost -Port 8081 -InformationLevel Quiet -WarningAction SilentlyContinue
+            if ($proxyRunning) {
+                Write-Host "  Proxy ready!" -ForegroundColor Green
+                break
+            }
+        } while ($attempt -lt $maxAttempts)
+    } else {
+        Write-Host "  Proxy already running!" -ForegroundColor Green
+    }
+
+    # Open FREE mode window
+    Write-Host "  Opening FREE mode window (Antigravity)..." -ForegroundColor Yellow
+    Start-Process powershell -ArgumentList "-NoExit", "-Command", @"
+Write-Host 'HappyCoder - FREE Mode (Antigravity Proxy)' -ForegroundColor Cyan
+Write-Host 'Scan the QR code below with HappyCoder app' -ForegroundColor Yellow
+Write-Host ''
+happy --claude-env ANTHROPIC_AUTH_TOKEN=test --claude-env ANTHROPIC_BASE_URL=http://localhost:8081
+"@
+
+    # Open PAID mode window
+    Write-Host "  Opening PAID mode window (Claude Code)..." -ForegroundColor Yellow
+    Start-Process powershell -ArgumentList "-NoExit", "-Command", @"
+Write-Host 'HappyCoder - PAID Mode (Claude Code)' -ForegroundColor Cyan
+Write-Host 'Scan the QR code below with HappyCoder app' -ForegroundColor Yellow
+Write-Host ''
+happy
+"@
+
+    Write-Host "`n  [OK] Two HappyCoder windows opened!" -ForegroundColor Green
+    Write-Host "  Scan the QR codes in each window with your mobile app" -ForegroundColor Cyan
+    Write-Host "  You can now switch between FREE and PAID modes in HappyCoder!" -ForegroundColor Green
+}
+
+Set-Alias -Name happy-free -Value Start-HappyFree
+Set-Alias -Name happy-paid -Value Start-HappyPaid
+Set-Alias -Name dual-sessions -Value Start-DualSessions
+
 # Show current mode on profile load
 Get-ClaudeMode
