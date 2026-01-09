@@ -19,9 +19,9 @@ function Use-ClaudeFree {
 
 function Start-AntigravityProxy {
     param()
-    Write-Host "Starting Antigravity proxy with Claude->Gemini fallback enabled..." -ForegroundColor Cyan
+    Write-Host "Starting Antigravity proxy..." -ForegroundColor Cyan
     $env:PORT = '8081'
-    antigravity-claude-proxy start --fallback
+    antigravity-claude-proxy start
 }
 
 function Get-ClaudeMode {
@@ -161,7 +161,7 @@ function Start-HappyFree {
         Write-Host "Starting Antigravity Proxy in background..." -ForegroundColor Yellow
         Start-Job -ScriptBlock {
             $env:PORT = '8081'
-            antigravity-claude-proxy start --fallback
+            antigravity-claude-proxy start
         } | Out-Null
 
         # Wait for proxy to be ready
@@ -237,7 +237,7 @@ function Start-DualSessions {
         Write-Host "  Starting proxy in background..." -ForegroundColor Yellow
         Start-Job -ScriptBlock {
             $env:PORT = '8081'
-            antigravity-claude-proxy start --fallback
+            antigravity-claude-proxy start
         } | Out-Null
 
         # Wait for proxy
