@@ -199,6 +199,60 @@ function Show-ClaudeHelp {
                 Write-Host "  - Claude/Gemini quota remaining for each Google account" -ForegroundColor Gray
                 Write-Host "  - Reset times for quotas" -ForegroundColor Gray
             }
+            "check-proxy-update" {
+                Write-Host "`nCommand: check-proxy-update" -ForegroundColor Cyan
+                Write-Host "Checks for updates to antigravity-claude-proxy" -ForegroundColor White
+                Write-Host "`nUsage:" -ForegroundColor Yellow
+                Write-Host "  check-proxy-update" -ForegroundColor Gray
+                Write-Host "`nWhat it does:" -ForegroundColor Yellow
+                Write-Host "  - Compares installed version with latest npm version" -ForegroundColor Gray
+                Write-Host "  - Fetches release notes from GitHub" -ForegroundColor Gray
+                Write-Host "  - Prompts to update if newer version available" -ForegroundColor Gray
+                Write-Host "`nNote:" -ForegroundColor Yellow
+                Write-Host "  Runs automatically on profile load (cached 24 hours)" -ForegroundColor Gray
+            }
+            "init-priority" {
+                Write-Host "`nCommand: init-priority" -ForegroundColor Cyan
+                Write-Host "Initialize account priority configuration (first-time setup)" -ForegroundColor White
+                Write-Host "`nUsage:" -ForegroundColor Yellow
+                Write-Host "  init-priority" -ForegroundColor Gray
+                Write-Host "`nWhat it does:" -ForegroundColor Yellow
+                Write-Host "  - Auto-detects your Claude Code account" -ForegroundColor Gray
+                Write-Host "  - Auto-detects Antigravity/Google accounts from proxy" -ForegroundColor Gray
+                Write-Host "  - Creates ~/.claude/priority.json configuration" -ForegroundColor Gray
+                Write-Host "  - Prompts for default priority order (antigravity-first or claude-first)" -ForegroundColor Gray
+                Write-Host "`nNote:" -ForegroundColor Yellow
+                Write-Host "  This runs automatically on profile load if priority.json is missing" -ForegroundColor Gray
+                Write-Host "  You can run it manually to re-detect accounts" -ForegroundColor Gray
+            }
+            "get-priority" {
+                Write-Host "`nCommand: get-priority" -ForegroundColor Cyan
+                Write-Host "View current account priority order" -ForegroundColor White
+                Write-Host "`nUsage:" -ForegroundColor Yellow
+                Write-Host "  get-priority" -ForegroundColor Gray
+                Write-Host "`nShows:" -ForegroundColor Yellow
+                Write-Host "  - Priority order of all accounts (1st = highest priority)" -ForegroundColor Gray
+                Write-Host "  - Enabled/disabled status for each account" -ForegroundColor Gray
+                Write-Host "  - Account types (claude-code or antigravity)" -ForegroundColor Gray
+                Write-Host "`nExample output:" -ForegroundColor Yellow
+                Write-Host "  [1] Antigravity - user@gmail.com (enabled)" -ForegroundColor Gray
+                Write-Host "  [2] Claude Code Account (enabled)" -ForegroundColor Gray
+            }
+            "set-priority" {
+                Write-Host "`nCommand: set-priority" -ForegroundColor Cyan
+                Write-Host "Change account priority order interactively" -ForegroundColor White
+                Write-Host "`nUsage:" -ForegroundColor Yellow
+                Write-Host "  set-priority" -ForegroundColor Gray
+                Write-Host "`nWhat it does:" -ForegroundColor Yellow
+                Write-Host "  - Shows current priority order" -ForegroundColor Gray
+                Write-Host "  - Prompts to reorder accounts" -ForegroundColor Gray
+                Write-Host "  - Prompts to enable/disable specific accounts" -ForegroundColor Gray
+                Write-Host "  - Saves updated configuration to priority.json" -ForegroundColor Gray
+                Write-Host "`nUse cases:" -ForegroundColor Yellow
+                Write-Host "  - Put free accounts first to preserve paid quota" -ForegroundColor Gray
+                Write-Host "  - Put paid account first for better performance" -ForegroundColor Gray
+                Write-Host "  - Disable exhausted accounts temporarily" -ForegroundColor Gray
+            }
             default {
                 Write-Host "`nCommand not found: $Command" -ForegroundColor Red
                 Write-Host "Run 'claude-help' to see all available commands" -ForegroundColor Yellow
@@ -223,8 +277,9 @@ function Show-ClaudeHelp {
     Write-Host ""
 
     Write-Host "USAGE & MONITORING" -ForegroundColor Yellow
-    Write-Host "  check-usage       View quotas for all accounts" -ForegroundColor White
-    Write-Host "  start-proxy       Manually start Antigravity proxy" -ForegroundColor White
+    Write-Host "  check-usage          View quotas for all accounts" -ForegroundColor White
+    Write-Host "  start-proxy          Manually start Antigravity proxy" -ForegroundColor White
+    Write-Host "  check-proxy-update   Check for proxy updates" -ForegroundColor White
     Write-Host ""
 
     Write-Host "PRIORITY MANAGEMENT" -ForegroundColor Yellow
@@ -520,6 +575,12 @@ if (-not (Test-Path $priorityPath)) {
         # Silently fail - invalid priority.json, user can fix manually
     }
 }
+
+# Load update checker
+. "$env:USERPROFILE\.claude\claude-proxy-manager\config\update-checker.ps1"
+
+# Check for antigravity-claude-proxy updates (cached for 24 hours)
+Check-AntigravityUpdate
 
 # Show current mode on profile load
 Get-ClaudeMode

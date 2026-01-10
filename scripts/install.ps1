@@ -175,11 +175,16 @@ Write-Host "`n[6/8] Installing files..." -ForegroundColor Cyan
 
 $installDir = "$env:USERPROFILE\.claude\claude-proxy-manager"
 New-Item -ItemType Directory -Path "$installDir\scripts" -Force | Out-Null
+New-Item -ItemType Directory -Path "$installDir\config" -Force | Out-Null
 
 # Copy scripts (assuming we're running from the repo)
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$repoRoot = Split-Path -Parent $scriptDir
+
 Copy-Item "$scriptDir\priority-functions.ps1" "$installDir\scripts\" -Force
 Copy-Item "$scriptDir\switch-claude-mode.ps1" "$installDir\scripts\" -Force
+Copy-Item "$repoRoot\config\profile-snippet.ps1" "$installDir\config\" -Force
+Copy-Item "$repoRoot\config\update-checker.ps1" "$installDir\config\" -Force
 
 Write-Host "  [OK] Files installed to $installDir" -ForegroundColor Green
 
@@ -198,7 +203,7 @@ if ($profileContent -notmatch "claude-proxy-manager") {
     $snippet = @"
 
 # Claude Proxy Manager
-. "$installDir\scripts\priority-functions.ps1"
+. "$installDir\config\profile-snippet.ps1"
 "@
     Add-Content -Path $profilePath -Value $snippet
     Write-Host "  [OK] PowerShell profile updated" -ForegroundColor Green
