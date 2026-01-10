@@ -292,10 +292,14 @@ iwr -useb https://raw.githubusercontent.com/brandonkchow/claude-proxy-manager/ma
 
 **Problem:** All Google accounts show exhausted
 
+**Note:** As of the latest version, priority configuration auto-initializes on profile load. If you're still seeing issues:
+
 **Solutions:**
+- Reload your profile: `. $PROFILE` (auto-initialization will run)
 - Wait for quota reset (shows reset time in `check-usage`)
 - Switch to paid mode: `claude-paid`
 - Add more Google accounts to Antigravity proxy
+- Manually run: `init-priority` if auto-init failed
 
 #### Can't switch to paid mode
 
