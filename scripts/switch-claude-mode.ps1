@@ -40,7 +40,7 @@ if ($Mode -eq 'paid') {
     
     # Clear proxy environment variables for this session
     Remove-Item Env:\ANTHROPIC_BASE_URL -ErrorAction SilentlyContinue
-    $env:ANTHROPIC_API_KEY = $null
+    Remove-Item Env:\ANTHROPIC_AUTH_TOKEN -ErrorAction SilentlyContinue
     
     Write-Host "✅ Switched to PAID mode" -ForegroundColor Green
     Write-Host "   Using: Anthropic API (your Claude Code account)" -ForegroundColor Gray
@@ -64,7 +64,7 @@ if ($Mode -eq 'paid') {
     
     # Set proxy environment variables for this session
     $env:ANTHROPIC_BASE_URL = 'http://localhost:8081'
-    $env:ANTHROPIC_API_KEY = 'test'
+    $env:ANTHROPIC_AUTH_TOKEN = 'test'
     
     # Check if proxy is running
     try {
