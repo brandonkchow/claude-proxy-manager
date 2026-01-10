@@ -55,7 +55,3 @@ coverage/
 # Agent Tools
 .agent/
 .gemini/
-
-# Private documentation
-CLAUDE.md
-
