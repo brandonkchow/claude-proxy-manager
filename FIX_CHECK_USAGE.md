@@ -3,7 +3,8 @@
 ## Problem
 The `check-usage` command shows empty quota values like:
 ```
-- anisenseiko@gmail.comClaude:  / remaining
+- anisenseiko@gmail.com
+  Claude:  / remaining
   Gemini:  / remaining
 ```
 
@@ -23,33 +24,52 @@ The `priority.json` file wasn't properly initialized with Antigravity accounts. 
 
 Without Antigravity accounts in the priority config, the quota fetching code never runs.
 
-## Solution
-Run the initialization command to auto-detect all accounts:
+## Solution (Automatic)
+**The profile now auto-initializes priority configuration!**
+
+When you reload your PowerShell profile (or restart PowerShell), it will:
+1. Detect if `priority.json` is missing or incomplete
+2. Check if Antigravity proxy is running with accounts
+3. Automatically run account detection
+4. Create/update priority configuration
+
+You'll see:
+```
+[INFO] Antigravity accounts detected. Updating priority configuration...
+Detecting available accounts...
+  [OK] Found Antigravity account: anisenseiko@gmail.com
+  [OK] Found Antigravity account: beastbzn@gmail.com
+  [OK] Claude Code authenticated
+[OK] Priority configuration updated
+```
+
+## Manual Solution (if needed)
+If auto-initialization doesn't work, run manually:
 
 ```powershell
 init-priority
 ```
 
-This will:
-1. Detect all Antigravity/Google accounts from the proxy
-2. Detect Claude Code authentication
-3. Create proper priority configuration
-4. Enable quota display in `check-usage`
-
 ## After Fix
 The output will show proper quotas:
 ```
-[1] PAID Claude Code Account
-    Status: Available (Switch with: claude-paid)
-
-[2] FREE Antigravity - anisenseiko@gmail.com
+[1] FREE Antigravity - anisenseiko@gmail.com
     Claude (Sonnet 4.5): 14% (Resets: 2026-01-10 6:24 AM)
-    Gemini (Flash 3):    100% (Resets: 2026-01-10 7:19 AM)
+    Gemini (Flash 3):    100% (Resets: 2026-01-10 7:22 AM)
 
-[3] FREE Antigravity - beastbzn@gmail.com
-    Claude (Sonnet 4.5): 45% (Resets: 2026-01-10 6:57 AM)
-    Gemini (Flash 3):    100% (Resets: 2026-01-10 7:19 AM)
+[2] FREE Antigravity - beastbzn@gmail.com
+    Claude (Sonnet 4.5): 35% (Resets: 2026-01-10 6:57 AM)
+    Gemini (Flash 3):    100% (Resets: 2026-01-10 7:22 AM)
+
+[3] PAID Claude Code Account
+    Status: Available (Switch with: claude-paid)
 ```
 
-## Code Improvement
-Updated the fallback message in `check-usage` to be more helpful when priority config is missing or incomplete.
+## Implementation Details
+The auto-initialization happens when the profile loads:
+- **Missing priority.json**: Immediately runs `Initialize-ClaudePriority`
+- **Incomplete priority.json**: Checks if Antigravity accounts are detected but not configured
+- **Silent fallback**: If proxy isn't running or detection fails, falls back gracefully
+
+Users no longer need to remember to run `init-priority` - it happens automatically!
+

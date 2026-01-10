@@ -482,5 +482,44 @@ Set-Alias -Name happy-free -Value Start-HappyFree
 Set-Alias -Name happy-paid -Value Start-HappyPaid
 Set-Alias -Name dual-sessions -Value Start-DualSessions
 
+# Auto-initialize priority configuration if missing or incomplete
+$priorityPath = "$env:USERPROFILE\.claude\priority.json"
+if (-not (Test-Path $priorityPath)) {
+    Write-Host "[INFO] Priority configuration not found. Auto-detecting accounts..." -ForegroundColor Yellow
+    try {
+        Initialize-ClaudePriority -DefaultPriority 'antigravity-first' -ErrorAction SilentlyContinue
+        Write-Host "[OK] Priority configuration created automatically" -ForegroundColor Green
+    } catch {
+        # Silently fail - user can run init-priority manually
+    }
+} else {
+    # Check if priority.json has Antigravity accounts
+    try {
+        $priorityConfig = Get-Content $priorityPath -Raw | ConvertFrom-Json
+        $hasAntigravity = $priorityConfig.priority | Where-Object { $_.type -eq 'antigravity' }
+
+        if (-not $hasAntigravity) {
+            # Check if proxy is running with accounts
+            try {
+                $proxyRunning = Test-NetConnection -ComputerName localhost -Port 8081 -InformationLevel Quiet -WarningAction SilentlyContinue -ErrorAction SilentlyContinue
+                if ($proxyRunning) {
+                    $limitsResponse = Invoke-WebRequest -Uri "http://localhost:8081/account-limits?format=json" -UseBasicParsing -TimeoutSec 2 -ErrorAction Stop
+                    $limits = $limitsResponse.Content | ConvertFrom-Json
+
+                    if ($limits.accounts -and $limits.accounts.Count -gt 0) {
+                        Write-Host "[INFO] Antigravity accounts detected. Updating priority configuration..." -ForegroundColor Yellow
+                        Initialize-ClaudePriority -DefaultPriority 'antigravity-first' -ErrorAction SilentlyContinue
+                        Write-Host "[OK] Priority configuration updated" -ForegroundColor Green
+                    }
+                }
+            } catch {
+                # Silently fail - proxy might not be running
+            }
+        }
+    } catch {
+        # Silently fail - invalid priority.json, user can fix manually
+    }
+}
+
 # Show current mode on profile load
 Get-ClaudeMode
