@@ -131,11 +131,15 @@ function Check-ClaudeUsage {
         
     } else {
         # Fallback to old display if no priority config
-        Write-Host "[1] PAID Claude Code Account" -ForegroundColor Blue
-        Write-Host "    Note: Check usage at https://console.anthropic.com/settings/limits`n" -ForegroundColor Gray
-        
-        Write-Host "[2] FREE Google Accounts (via Antigravity)" -ForegroundColor Green
-        Write-Host "    Run: init-priority to set up priority order" -ForegroundColor Yellow
+        Write-Host "[!] Priority configuration not found or incomplete" -ForegroundColor Yellow
+        Write-Host ""
+        Write-Host "Run this command to set up account detection:" -ForegroundColor Cyan
+        Write-Host "  init-priority" -ForegroundColor White
+        Write-Host ""
+        Write-Host "This will auto-detect:" -ForegroundColor Gray
+        Write-Host "  - Your paid Claude Code account" -ForegroundColor Gray
+        Write-Host "  - Your free Antigravity/Google accounts" -ForegroundColor Gray
+        Write-Host "  - Configure priority order" -ForegroundColor Gray
     }
     
     Write-Host "`n========================================`n" -ForegroundColor Cyan
