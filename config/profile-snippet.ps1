@@ -131,11 +131,15 @@ function Check-ClaudeUsage {
         
     } else {
         # Fallback to old display if no priority config
-        Write-Host "[1] PAID Claude Code Account" -ForegroundColor Blue
-        Write-Host "    Note: Check usage at https://console.anthropic.com/settings/limits`n" -ForegroundColor Gray
-        
-        Write-Host "[2] FREE Google Accounts (via Antigravity)" -ForegroundColor Green
-        Write-Host "    Run: init-priority to set up priority order" -ForegroundColor Yellow
+        Write-Host "[!] Priority configuration not found or incomplete" -ForegroundColor Yellow
+        Write-Host ""
+        Write-Host "Run this command to set up account detection:" -ForegroundColor Cyan
+        Write-Host "  init-priority" -ForegroundColor White
+        Write-Host ""
+        Write-Host "This will auto-detect:" -ForegroundColor Gray
+        Write-Host "  - Your paid Claude Code account" -ForegroundColor Gray
+        Write-Host "  - Your free Antigravity/Google accounts" -ForegroundColor Gray
+        Write-Host "  - Configure priority order" -ForegroundColor Gray
     }
     
     Write-Host "`n========================================`n" -ForegroundColor Cyan
@@ -477,6 +481,45 @@ happy
 Set-Alias -Name happy-free -Value Start-HappyFree
 Set-Alias -Name happy-paid -Value Start-HappyPaid
 Set-Alias -Name dual-sessions -Value Start-DualSessions
+
+# Auto-initialize priority configuration if missing or incomplete
+$priorityPath = "$env:USERPROFILE\.claude\priority.json"
+if (-not (Test-Path $priorityPath)) {
+    Write-Host "[INFO] Priority configuration not found. Auto-detecting accounts..." -ForegroundColor Yellow
+    try {
+        Initialize-ClaudePriority -DefaultPriority 'antigravity-first' -ErrorAction SilentlyContinue
+        Write-Host "[OK] Priority configuration created automatically" -ForegroundColor Green
+    } catch {
+        # Silently fail - user can run init-priority manually
+    }
+} else {
+    # Check if priority.json has Antigravity accounts
+    try {
+        $priorityConfig = Get-Content $priorityPath -Raw | ConvertFrom-Json
+        $hasAntigravity = $priorityConfig.priority | Where-Object { $_.type -eq 'antigravity' }
+
+        if (-not $hasAntigravity) {
+            # Check if proxy is running with accounts
+            try {
+                $proxyRunning = Test-NetConnection -ComputerName localhost -Port 8081 -InformationLevel Quiet -WarningAction SilentlyContinue -ErrorAction SilentlyContinue
+                if ($proxyRunning) {
+                    $limitsResponse = Invoke-WebRequest -Uri "http://localhost:8081/account-limits?format=json" -UseBasicParsing -TimeoutSec 2 -ErrorAction Stop
+                    $limits = $limitsResponse.Content | ConvertFrom-Json
+
+                    if ($limits.accounts -and $limits.accounts.Count -gt 0) {
+                        Write-Host "[INFO] Antigravity accounts detected. Updating priority configuration..." -ForegroundColor Yellow
+                        Initialize-ClaudePriority -DefaultPriority 'antigravity-first' -ErrorAction SilentlyContinue
+                        Write-Host "[OK] Priority configuration updated" -ForegroundColor Green
+                    }
+                }
+            } catch {
+                # Silently fail - proxy might not be running
+            }
+        }
+    } catch {
+        # Silently fail - invalid priority.json, user can fix manually
+    }
+}
 
 # Show current mode on profile load
 Get-ClaudeMode
