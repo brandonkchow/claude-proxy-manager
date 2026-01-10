@@ -202,8 +202,17 @@ $profileContent = Get-Content $profilePath -Raw -ErrorAction SilentlyContinue
 if ($profileContent -notmatch "claude-proxy-manager") {
     $snippet = @"
 
-# Claude Proxy Manager
-. "$installDir\config\profile-snippet.ps1"
+# Claude Proxy Manager - Auto-sync from repo if available
+`$repoPath = "C:\Users\`$env:USERNAME\GitHub\claude-proxy-manager\config\profile-snippet.ps1"
+`$installedPath = "`$env:USERPROFILE\.claude\claude-proxy-manager\config\profile-snippet.ps1"
+
+if (Test-Path `$repoPath) {
+    . `$repoPath  # Developer mode - source from repo
+} elseif (Test-Path `$installedPath) {
+    . `$installedPath  # End user mode - source from installed location
+} else {
+    Write-Host "[ERROR] Claude Proxy Manager not found. Please reinstall." -ForegroundColor Red
+}
 "@
     Add-Content -Path $profilePath -Value $snippet
     Write-Host "  [OK] PowerShell profile updated" -ForegroundColor Green

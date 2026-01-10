@@ -253,6 +253,23 @@ function Show-ClaudeHelp {
                 Write-Host "  - Put paid account first for better performance" -ForegroundColor Gray
                 Write-Host "  - Disable exhausted accounts temporarily" -ForegroundColor Gray
             }
+            "claude-update" {
+                Write-Host "`nCommand: claude-update" -ForegroundColor Cyan
+                Write-Host "Update Claude Proxy Manager to the latest version" -ForegroundColor White
+                Write-Host "`nUsage:" -ForegroundColor Yellow
+                Write-Host "  claude-update" -ForegroundColor Gray
+                Write-Host "`nWhat it does:" -ForegroundColor Yellow
+                Write-Host "  - Detects if you have the repo cloned locally" -ForegroundColor Gray
+                Write-Host "  - If yes: Syncs from repo to installed location" -ForegroundColor Gray
+                Write-Host "  - If no: Downloads latest from GitHub" -ForegroundColor Gray
+                Write-Host "  - Updates all scripts and config files" -ForegroundColor Gray
+                Write-Host "`nWhen to use:" -ForegroundColor Yellow
+                Write-Host "  - After pulling latest changes from GitHub" -ForegroundColor Gray
+                Write-Host "  - When you see update notifications" -ForegroundColor Gray
+                Write-Host "  - To sync your installed scripts with repo changes" -ForegroundColor Gray
+                Write-Host "`nNote:" -ForegroundColor Yellow
+                Write-Host "  After running, reload profile with: . `$PROFILE" -ForegroundColor Gray
+            }
             default {
                 Write-Host "`nCommand not found: $Command" -ForegroundColor Red
                 Write-Host "Run 'claude-help' to see all available commands" -ForegroundColor Yellow
@@ -299,6 +316,11 @@ function Show-ClaudeHelp {
     Write-Host "  claude-help              Show this help message" -ForegroundColor White
     Write-Host "  claude-help <command>    Show detailed help for a command" -ForegroundColor White
     Write-Host "                           Example: claude-help dual-sessions" -ForegroundColor Gray
+    Write-Host ""
+
+    Write-Host "UPDATES & MAINTENANCE" -ForegroundColor Yellow
+    Write-Host "  claude-update         Update to latest version" -ForegroundColor White
+    Write-Host "                        Syncs from repo or downloads from GitHub" -ForegroundColor Gray
     Write-Host ""
 
     Write-Host "========================================" -ForegroundColor Cyan
@@ -536,6 +558,115 @@ happy
 Set-Alias -Name happy-free -Value Start-HappyFree
 Set-Alias -Name happy-paid -Value Start-HappyPaid
 Set-Alias -Name dual-sessions -Value Start-DualSessions
+
+# ============================================
+# Update Command - Keep scripts in sync
+# ============================================
+
+function Update-ClaudeProxyManager {
+    <#
+    .SYNOPSIS
+        Updates Claude Proxy Manager scripts to latest version
+
+    .DESCRIPTION
+        Syncs scripts from repo (if available) or downloads from GitHub.
+        Ensures your installed scripts match the latest version.
+    #>
+
+    Write-Host "`n========================================" -ForegroundColor Cyan
+    Write-Host "  CLAUDE PROXY MANAGER UPDATE" -ForegroundColor Cyan
+    Write-Host "========================================`n" -ForegroundColor Cyan
+
+    $installDir = "$env:USERPROFILE\.claude\claude-proxy-manager"
+
+    # Check if local repo exists
+    $possibleRepoPaths = @(
+        "C:\Users\$env:USERNAME\GitHub\claude-proxy-manager",
+        "C:\Users\$env:USERNAME\github\claude-proxy-manager",
+        "$env:USERPROFILE\GitHub\claude-proxy-manager",
+        "$env:USERPROFILE\github\claude-proxy-manager",
+        "$env:USERPROFILE\Documents\GitHub\claude-proxy-manager"
+    )
+
+    $repoPath = $null
+    foreach ($path in $possibleRepoPaths) {
+        if (Test-Path "$path\.git") {
+            $repoPath = $path
+            break
+        }
+    }
+
+    if ($repoPath) {
+        # SCENARIO A: Developer with local repo
+        Write-Host "[Developer Mode] Updating from local repository..." -ForegroundColor Magenta
+        Write-Host "  Repo location: $repoPath" -ForegroundColor Gray
+
+        try {
+            # Create directories if they don't exist
+            New-Item -ItemType Directory -Path "$installDir\config" -Force | Out-Null
+            New-Item -ItemType Directory -Path "$installDir\scripts" -Force | Out-Null
+
+            # Copy config files
+            Copy-Item "$repoPath\config\profile-snippet.ps1" "$installDir\config\" -Force
+            Copy-Item "$repoPath\config\update-checker.ps1" "$installDir\config\" -Force -ErrorAction SilentlyContinue
+
+            # Copy script files
+            Copy-Item "$repoPath\scripts\priority-functions.ps1" "$installDir\scripts\" -Force
+            Copy-Item "$repoPath\scripts\switch-claude-mode.ps1" "$installDir\scripts\" -Force
+
+            Write-Host "`n[OK] Updated from local repository!" -ForegroundColor Green
+            Write-Host "  Files synced to: $installDir" -ForegroundColor Gray
+        } catch {
+            Write-Host "`n[ERROR] Failed to copy files: $_" -ForegroundColor Red
+            return
+        }
+    } else {
+        # SCENARIO B: End user without local repo
+        Write-Host "[End User Mode] Downloading latest from GitHub..." -ForegroundColor Cyan
+
+        try {
+            $tempZip = "$env:TEMP\claude-proxy-manager.zip"
+            $tempExtract = "$env:TEMP\cpm-update"
+
+            # Download latest release
+            Write-Host "  Downloading..." -ForegroundColor Gray
+            Invoke-WebRequest -Uri "https://github.com/brandonkchow/claude-proxy-manager/archive/refs/heads/main.zip" -OutFile $tempZip -UseBasicParsing
+
+            # Extract
+            Write-Host "  Extracting..." -ForegroundColor Gray
+            Expand-Archive -Path $tempZip -DestinationPath $tempExtract -Force
+
+            # Create directories
+            New-Item -ItemType Directory -Path "$installDir\config" -Force | Out-Null
+            New-Item -ItemType Directory -Path "$installDir\scripts" -Force | Out-Null
+
+            # Copy files
+            Write-Host "  Installing files..." -ForegroundColor Gray
+            $extractedPath = "$tempExtract\claude-proxy-manager-main"
+            Copy-Item "$extractedPath\config\profile-snippet.ps1" "$installDir\config\" -Force
+            Copy-Item "$extractedPath\config\update-checker.ps1" "$installDir\config\" -Force -ErrorAction SilentlyContinue
+            Copy-Item "$extractedPath\scripts\priority-functions.ps1" "$installDir\scripts\" -Force
+            Copy-Item "$extractedPath\scripts\switch-claude-mode.ps1" "$installDir\scripts\" -Force
+
+            # Cleanup
+            Remove-Item $tempZip -Force -ErrorAction SilentlyContinue
+            Remove-Item $tempExtract -Recurse -Force -ErrorAction SilentlyContinue
+
+            Write-Host "`n[OK] Updated from GitHub!" -ForegroundColor Green
+            Write-Host "  Files installed to: $installDir" -ForegroundColor Gray
+        } catch {
+            Write-Host "`n[ERROR] Failed to download/install: $_" -ForegroundColor Red
+            Write-Host "  Please check your internet connection and try again." -ForegroundColor Yellow
+            return
+        }
+    }
+
+    Write-Host "`nTo apply changes, reload your profile:" -ForegroundColor Yellow
+    Write-Host "  . `$PROFILE" -ForegroundColor Cyan
+    Write-Host "`n========================================`n" -ForegroundColor Cyan
+}
+
+Set-Alias -Name claude-update -Value Update-ClaudeProxyManager
 
 # Auto-initialize priority configuration if missing or incomplete
 $priorityPath = "$env:USERPROFILE\.claude\priority.json"
