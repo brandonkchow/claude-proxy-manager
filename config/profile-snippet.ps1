@@ -49,6 +49,28 @@ function Get-ClaudeMode {
             Write-Host "   Mode: PAID (Claude Code Account)" -ForegroundColor Blue
             Write-Host "   Using: Anthropic API" -ForegroundColor Gray
         }
+
+        # Show daemon status if happy-coder is installed
+        try {
+            $happyVersion = happy --version 2>$null
+            if ($happyVersion) {
+                $daemonStatus = Get-HappyDaemonStatus
+                Write-Host ""
+                if ($daemonStatus.Running) {
+                    Write-Host "   Happy Daemon: Running" -ForegroundColor Green
+                    if ($daemonStatus.SessionCount -gt 0) {
+                        Write-Host "   Active Sessions: $($daemonStatus.SessionCount)" -ForegroundColor Gray
+                    } else {
+                        Write-Host "   Active Sessions: None (run: dual-sessions -UseDaemon)" -ForegroundColor Gray
+                    }
+                } else {
+                    Write-Host "   Happy Daemon: Not Running" -ForegroundColor Yellow
+                    Write-Host "   Start with: daemon-start" -ForegroundColor Gray
+                }
+            }
+        } catch {
+            # happy-coder not installed or error checking - silently continue
+        }
     } else {
         Write-Host "   No configuration found" -ForegroundColor Yellow
     }
