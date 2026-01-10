@@ -1,0 +1,8 @@
+{
+  "autoStartDaemon": true,
+  "autoStartMode": "none",
+  "defaultWorkingDirectory": null,
+  "healthCheckInterval": 300,
+  "restartOnFailure": true,
+  "lastHealthCheck": null
+}
