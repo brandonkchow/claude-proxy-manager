@@ -177,15 +177,21 @@ function Show-ClaudeHelp {
                 Write-Host "`nCommand: dual-sessions" -ForegroundColor Cyan
                 Write-Host "Starts TWO HappyCoder sessions (FREE and PAID) for mobile access" -ForegroundColor White
                 Write-Host "`nUsage:" -ForegroundColor Yellow
-                Write-Host "  dual-sessions                          # Basic usage" -ForegroundColor Gray
+                Write-Host "  dual-sessions                          # Basic usage (foreground)" -ForegroundColor Gray
                 Write-Host "  dual-sessions -SessionName 'MyProject' # Custom name" -ForegroundColor Gray
                 Write-Host "  dual-sessions -NoSymlinks              # Disable symlinks" -ForegroundColor Gray
+                Write-Host "  dual-sessions -UseDaemon               # PERSISTENT MODE" -ForegroundColor Green
                 Write-Host "`nWhat it does:" -ForegroundColor Yellow
                 Write-Host "  - Creates symlinked directories (ProjectName-FREE and ProjectName-PAID)" -ForegroundColor Gray
                 Write-Host "  - Opens two PowerShell windows with color coding" -ForegroundColor Gray
                 Write-Host "    * GREEN window = FREE mode (Antigravity)" -ForegroundColor Gray
                 Write-Host "    * BLUE window = PAID mode (Claude Code)" -ForegroundColor Gray
                 Write-Host "  - Displays QR codes for HappyCoder mobile app" -ForegroundColor Gray
+                Write-Host "`nPersistent Mode (-UseDaemon):" -ForegroundColor Yellow
+                Write-Host "  Sessions survive terminal restarts and computer reboots!" -ForegroundColor Green
+                Write-Host "  - Automatically starts daemon if not running" -ForegroundColor Gray
+                Write-Host "  - One-time QR code scan, permanent mobile access" -ForegroundColor Gray
+                Write-Host "  - Sessions reconnect automatically on mobile app" -ForegroundColor Gray
                 Write-Host "`nIn HappyCoder app:" -ForegroundColor Yellow
                 Write-Host "  You'll see two distinct sessions you can switch between!" -ForegroundColor Green
             }
@@ -270,6 +276,60 @@ function Show-ClaudeHelp {
                 Write-Host "`nNote:" -ForegroundColor Yellow
                 Write-Host "  After running, reload profile with: . `$PROFILE" -ForegroundColor Gray
             }
+            "daemon-start" {
+                Write-Host "`nCommand: daemon-start" -ForegroundColor Cyan
+                Write-Host "Start the happy daemon for persistent HappyCoder sessions" -ForegroundColor White
+                Write-Host "`nUsage:" -ForegroundColor Yellow
+                Write-Host "  daemon-start" -ForegroundColor Gray
+                Write-Host "`nWhat it does:" -ForegroundColor Yellow
+                Write-Host "  - Checks if daemon is already running" -ForegroundColor Gray
+                Write-Host "  - Ensures antigravity proxy is running (for FREE mode)" -ForegroundColor Gray
+                Write-Host "  - Starts happy daemon as background service" -ForegroundColor Gray
+                Write-Host "  - Sessions will persist across terminal restarts and reboots" -ForegroundColor Gray
+                Write-Host "`nAfter starting daemon:" -ForegroundColor Yellow
+                Write-Host "  - Run: dual-sessions -UseDaemon  (for persistent sessions)" -ForegroundColor Cyan
+                Write-Host "  - Sessions survive even if you close terminal windows" -ForegroundColor Gray
+                Write-Host "  - Sessions reconnect automatically on mobile" -ForegroundColor Gray
+            }
+            "daemon-stop" {
+                Write-Host "`nCommand: daemon-stop" -ForegroundColor Cyan
+                Write-Host "Stop the happy daemon" -ForegroundColor White
+                Write-Host "`nUsage:" -ForegroundColor Yellow
+                Write-Host "  daemon-stop" -ForegroundColor Gray
+                Write-Host "`nWhat it does:" -ForegroundColor Yellow
+                Write-Host "  - Stops the daemon background service" -ForegroundColor Gray
+                Write-Host "  - Sessions remain active on relay server" -ForegroundColor Gray
+                Write-Host "  - Sessions can reconnect when daemon restarts" -ForegroundColor Gray
+                Write-Host "`nIMPORTANT:" -ForegroundColor Yellow
+                Write-Host "  Your sessions are NOT lost when daemon stops!" -ForegroundColor Green
+                Write-Host "  They persist on the happy-server relay" -ForegroundColor Gray
+            }
+            "daemon-status" {
+                Write-Host "`nCommand: daemon-status" -ForegroundColor Cyan
+                Write-Host "Check if happy daemon is running and show session count" -ForegroundColor White
+                Write-Host "`nUsage:" -ForegroundColor Yellow
+                Write-Host "  daemon-status" -ForegroundColor Gray
+                Write-Host "  `$status = daemon-status  # Returns object" -ForegroundColor Gray
+                Write-Host "`nShows:" -ForegroundColor Yellow
+                Write-Host "  - Whether daemon is running" -ForegroundColor Gray
+                Write-Host "  - Number of active sessions" -ForegroundColor Gray
+                Write-Host "  - Number of happy processes" -ForegroundColor Gray
+            }
+            "daemon-restart" {
+                Write-Host "`nCommand: daemon-restart" -ForegroundColor Cyan
+                Write-Host "Restart the happy daemon (sessions persist)" -ForegroundColor White
+                Write-Host "`nUsage:" -ForegroundColor Yellow
+                Write-Host "  daemon-restart" -ForegroundColor Gray
+                Write-Host "`nWhat it does:" -ForegroundColor Yellow
+                Write-Host "  - Stops the daemon" -ForegroundColor Gray
+                Write-Host "  - Waits 2 seconds" -ForegroundColor Gray
+                Write-Host "  - Starts the daemon again" -ForegroundColor Gray
+                Write-Host "  - Sessions survive the restart" -ForegroundColor Gray
+                Write-Host "`nWhen to use:" -ForegroundColor Yellow
+                Write-Host "  - After updating happy-coder: npm update -g happy-coder" -ForegroundColor Cyan
+                Write-Host "  - If daemon seems unresponsive" -ForegroundColor Gray
+                Write-Host "  - To apply daemon configuration changes" -ForegroundColor Gray
+            }
             default {
                 Write-Host "`nCommand not found: $Command" -ForegroundColor Red
                 Write-Host "Run 'claude-help' to see all available commands" -ForegroundColor Yellow
@@ -321,6 +381,14 @@ function Show-ClaudeHelp {
     Write-Host "UPDATES & MAINTENANCE" -ForegroundColor Yellow
     Write-Host "  claude-update         Update to latest version" -ForegroundColor White
     Write-Host "                        Syncs from repo or downloads from GitHub" -ForegroundColor Gray
+    Write-Host ""
+
+    Write-Host "PERSISTENT SESSIONS (Happy Daemon)" -ForegroundColor Yellow
+    Write-Host "  daemon-start          Start daemon (sessions survive restarts)" -ForegroundColor White
+    Write-Host "  daemon-stop           Stop daemon (sessions persist on relay)" -ForegroundColor White
+    Write-Host "  daemon-status         Check daemon health and session count" -ForegroundColor White
+    Write-Host "  daemon-restart        Restart daemon (safe - sessions survive)" -ForegroundColor White
+    Write-Host "  dual-sessions -UseDaemon   Start persistent dual sessions" -ForegroundColor Green
     Write-Host ""
 
     Write-Host "========================================" -ForegroundColor Cyan
