@@ -36,23 +36,35 @@ claude-help check-usage
 | `get-priority` | View current priority order |
 | `set-priority` | Change account priority order |
 
+### Persistent Sessions (Happy Daemon)
+| Command | Description |
+|---------|-------------|
+| `daemon-start` | Start happy daemon for persistent sessions |
+| `daemon-stop` | Stop daemon (sessions persist on relay!) |
+| `daemon-status` | Check daemon health and session count |
+| `daemon-restart` | Restart daemon (safe - sessions survive) |
+
 ### HappyCoder (Mobile Access)
 | Command | Description |
 |---------|-------------|
 | `happy-free` | Start HappyCoder with Antigravity |
 | `happy-paid` | Start HappyCoder with Claude Code |
 | `dual-sessions` | **RECOMMENDED** - Start BOTH sessions for mobile |
+| `dual-sessions -UseDaemon` | Start persistent dual sessions (survive restarts) |
 
 ## Dual-Sessions Usage
 
 The `dual-sessions` command is the best way to use HappyCoder on mobile:
 
 ```powershell
-# Basic usage (creates symlinks automatically)
+# Standard mode (foreground sessions)
 dual-sessions
 
+# Persistent mode (sessions survive restarts) - RECOMMENDED!
+dual-sessions -UseDaemon
+
 # Custom session name
-dual-sessions -SessionName "WebDev"
+dual-sessions -SessionName "WebDev" -UseDaemon
 
 # Disable symlinks (not recommended)
 dual-sessions -NoSymlinks
@@ -98,11 +110,35 @@ claude-paid
 
 ### Mobile Development
 ```powershell
-# Start dual sessions for mobile access
+# Start persistent dual sessions (RECOMMENDED)
+dual-sessions -UseDaemon
+
+# Scan both QR codes with HappyCoder app (one-time!)
+# Sessions survive restarts - no need to rescan!
+```
+
+### Mobile Development (Standard)
+```powershell
+# Start standard dual sessions
 dual-sessions
 
 # Scan both QR codes with HappyCoder app
-# Now you can switch between FREE and PAID on your phone!
+# Note: Must rescan after terminal restarts
+```
+
+### Persistent Sessions Management
+```powershell
+# Check daemon status and active sessions
+daemon-status
+
+# Start daemon manually
+daemon-start
+
+# Start persistent dual sessions
+dual-sessions -UseDaemon
+
+# Restart daemon after updating happy-coder
+daemon-restart
 ```
 
 ### Remote Access (SSH/tmux)
@@ -157,20 +193,25 @@ claude-help <command-name>
 
 ## Tips & Best Practices
 
-1. **Use dual-sessions for mobile** - It's the easiest way to switch between FREE/PAID on your phone
+1. **Use persistent dual-sessions** - Run `dual-sessions -UseDaemon` for permanent mobile access with one-time QR scanning
 
-2. **Check usage regularly** - Run `check-usage` to see quota remaining
+2. **Enable daemon auto-start** - Configure during installation to have sessions ready after every login
 
-3. **Set default priority** - Use `set-priority` to configure which accounts to use first
+3. **Check usage regularly** - Run `check-usage` to see quota remaining
 
-4. **Enable Developer Mode** - One-time setup makes symlinks work automatically
+4. **Set default priority** - Use `set-priority` to configure which accounts to use first
 
-5. **Keep proxy running** - The proxy auto-starts, but you can manually start with `start-proxy`
+5. **Enable Developer Mode** - One-time setup makes symlinks work automatically
+
+6. **Keep proxy running** - The proxy auto-starts, but you can manually start with `start-proxy`
+
+7. **Restart daemon after updates** - Run `daemon-restart` after updating happy-coder package
 
 ## File Locations
 
 - Settings: `~/.claude/settings.json`
 - Priority config: `~/.claude/priority.json`
+- Daemon config: `~/.claude/claude-proxy-manager/daemon-config.json`
 - Installed scripts: `~/.claude/claude-proxy-manager/`
 - PowerShell profile: `$PROFILE`
 
