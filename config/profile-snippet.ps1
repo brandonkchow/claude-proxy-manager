@@ -396,11 +396,30 @@ function Start-DualSessions {
     param(
         [string]$WorkingDirectory = (Get-Location).Path,
         [string]$SessionName,  # Custom session name (defaults to directory name)
-        [switch]$NoSymlinks    # Disable symlinks (NOT recommended - sessions will have identical names)
+        [switch]$NoSymlinks,   # Disable symlinks (NOT recommended - sessions will have identical names)
+        [switch]$UseDaemon     # Use daemon mode for persistent sessions (survive restarts)
     )
 
     Write-Host "Setting up dual HappyCoder sessions with QR codes..." -ForegroundColor Cyan
     Write-Host "  Working directory: $WorkingDirectory" -ForegroundColor Gray
+
+    # Check daemon mode
+    if ($UseDaemon) {
+        Write-Host "  Mode: PERSISTENT (daemon mode - sessions survive restarts)" -ForegroundColor Magenta
+
+        # Ensure daemon is running
+        $daemonStatus = Get-HappyDaemonStatus
+        if (-not $daemonStatus.Running) {
+            Write-Host "  [!] Daemon not running - starting now..." -ForegroundColor Yellow
+            Start-HappyDaemon
+            Start-Sleep -Seconds 2
+        } else {
+            Write-Host "  [OK] Daemon already running ($($daemonStatus.SessionCount) active sessions)" -ForegroundColor Green
+        }
+    } else {
+        Write-Host "  Mode: Standard (foreground - sessions end when windows close)" -ForegroundColor Gray
+        Write-Host "  Tip: Use -UseDaemon for persistent sessions" -ForegroundColor DarkGray
+    }
 
     # Determine base session name
     $baseName = if ($SessionName) { $SessionName } else { Split-Path -Leaf $WorkingDirectory }
@@ -667,6 +686,185 @@ function Update-ClaudeProxyManager {
 }
 
 Set-Alias -Name claude-update -Value Update-ClaudeProxyManager
+
+# ============================================
+# Happy Daemon Management - Persistent Sessions
+# ============================================
+
+function Get-HappyDaemonStatus {
+    <#
+    .SYNOPSIS
+        Check if happy daemon is running and get session count
+
+    .DESCRIPTION
+        Parses output of 'happy daemon status' and returns structured info
+    #>
+
+    try {
+        $output = happy daemon status 2>&1 | Out-String
+
+        $status = @{
+            Running = $false
+            SessionCount = 0
+            ProcessCount = 0
+        }
+
+        if ($output -match "Daemon is running") {
+            $status.Running = $true
+        }
+
+        # Parse session count if available
+        if ($output -match "(\d+) active sessions") {
+            $status.SessionCount = [int]$Matches[1]
+        }
+
+        # Parse process count
+        if ($output -match "(\d+) happy processes") {
+            $status.ProcessCount = [int]$Matches[1]
+        }
+
+        return $status
+    } catch {
+        Write-Host "[ERROR] Failed to check daemon status: $_" -ForegroundColor Red
+        return @{ Running = $false; SessionCount = 0; ProcessCount = 0 }
+    }
+}
+
+function Start-HappyDaemon {
+    <#
+    .SYNOPSIS
+        Start the happy daemon for persistent sessions
+
+    .DESCRIPTION
+        Starts the happy daemon as a background service.
+        Sessions will persist across terminal restarts and reboots.
+    #>
+
+    Write-Host "`nStarting happy daemon..." -ForegroundColor Cyan
+
+    # Check if already running
+    $status = Get-HappyDaemonStatus
+    if ($status.Running) {
+        Write-Host "[INFO] Daemon is already running" -ForegroundColor Yellow
+        Write-Host "  Active sessions: $($status.SessionCount)" -ForegroundColor Gray
+        return
+    }
+
+    # Ensure antigravity proxy is running (needed for FREE mode)
+    Write-Host "  Checking antigravity proxy..." -ForegroundColor Gray
+    $proxyRunning = Test-NetConnection -ComputerName localhost -Port 8081 -InformationLevel Quiet -WarningAction SilentlyContinue
+
+    if (-not $proxyRunning) {
+        Write-Host "  [!] Antigravity proxy not running" -ForegroundColor Yellow
+        Write-Host "  Starting proxy (needed for FREE mode sessions)..." -ForegroundColor Gray
+
+        Start-Job -ScriptBlock {
+            $env:PORT = '8081'
+            antigravity-claude-proxy start
+        } | Out-Null
+
+        # Wait for proxy
+        $maxAttempts = 15
+        $attempt = 0
+        do {
+            Start-Sleep -Seconds 1
+            $attempt++
+            $proxyRunning = Test-NetConnection -ComputerName localhost -Port 8081 -InformationLevel Quiet -WarningAction SilentlyContinue
+            if ($proxyRunning) {
+                Write-Host "  [OK] Proxy ready" -ForegroundColor Green
+                break
+            }
+        } while ($attempt -lt $maxAttempts)
+
+        if (-not $proxyRunning) {
+            Write-Host "  [!] Proxy failed to start - FREE mode sessions may not work" -ForegroundColor Yellow
+        }
+    } else {
+        Write-Host "  [OK] Proxy already running" -ForegroundColor Green
+    }
+
+    # Start daemon
+    try {
+        Write-Host "  Starting daemon process..." -ForegroundColor Gray
+        $output = happy daemon start 2>&1 | Out-String
+
+        # Verify it started
+        Start-Sleep -Seconds 2
+        $status = Get-HappyDaemonStatus
+
+        if ($status.Running) {
+            Write-Host "`n[OK] Happy daemon started successfully!" -ForegroundColor Green
+            Write-Host "  Sessions will now persist across terminal restarts" -ForegroundColor Gray
+            Write-Host "  To start persistent dual sessions: dual-sessions -UseDaemon" -ForegroundColor Cyan
+        } else {
+            Write-Host "`n[ERROR] Daemon failed to start" -ForegroundColor Red
+            Write-Host "  Output: $output" -ForegroundColor Gray
+        }
+    } catch {
+        Write-Host "`n[ERROR] Failed to start daemon: $_" -ForegroundColor Red
+    }
+}
+
+function Stop-HappyDaemon {
+    <#
+    .SYNOPSIS
+        Stop the happy daemon
+
+    .DESCRIPTION
+        Stops the daemon process. Sessions will remain active on the relay server
+        and can be reconnected when daemon restarts.
+    #>
+
+    Write-Host "`nStopping happy daemon..." -ForegroundColor Cyan
+    Write-Host "  [INFO] Sessions will remain active on relay server" -ForegroundColor Gray
+
+    # Check if running
+    $status = Get-HappyDaemonStatus
+    if (-not $status.Running) {
+        Write-Host "[INFO] Daemon is not running" -ForegroundColor Yellow
+        return
+    }
+
+    try {
+        $output = happy daemon stop 2>&1 | Out-String
+        Start-Sleep -Seconds 1
+
+        # Verify it stopped
+        $status = Get-HappyDaemonStatus
+        if (-not $status.Running) {
+            Write-Host "[OK] Daemon stopped" -ForegroundColor Green
+            Write-Host "  Sessions are still active on relay server" -ForegroundColor Gray
+        } else {
+            Write-Host "[WARNING] Daemon may still be running" -ForegroundColor Yellow
+        }
+    } catch {
+        Write-Host "[ERROR] Failed to stop daemon: $_" -ForegroundColor Red
+    }
+}
+
+function Restart-HappyDaemon {
+    <#
+    .SYNOPSIS
+        Restart the happy daemon
+
+    .DESCRIPTION
+        Stops and restarts the daemon. Sessions persist during restart.
+        Use this after updating happy-coder npm package.
+    #>
+
+    Write-Host "`nRestarting happy daemon..." -ForegroundColor Cyan
+    Write-Host "  [INFO] Sessions will remain active during restart" -ForegroundColor Gray
+
+    Stop-HappyDaemon
+    Start-Sleep -Seconds 2
+    Start-HappyDaemon
+}
+
+# Aliases for daemon commands
+Set-Alias -Name daemon-start -Value Start-HappyDaemon
+Set-Alias -Name daemon-stop -Value Stop-HappyDaemon
+Set-Alias -Name daemon-status -Value Get-HappyDaemonStatus
+Set-Alias -Name daemon-restart -Value Restart-HappyDaemon
 
 # Auto-initialize priority configuration if missing or incomplete
 $priorityPath = "$env:USERPROFILE\.claude\priority.json"
