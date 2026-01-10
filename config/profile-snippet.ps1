@@ -141,6 +141,118 @@ function Check-ClaudeUsage {
     Write-Host "`n========================================`n" -ForegroundColor Cyan
 }
 
+function Show-ClaudeHelp {
+    param(
+        [string]$Command  # Optional: show help for specific command
+    )
+
+    if ($Command) {
+        # Show detailed help for specific command
+        switch ($Command.ToLower()) {
+            "claude-paid" {
+                Write-Host "`nCommand: claude-paid" -ForegroundColor Cyan
+                Write-Host "Switches to PAID mode (Claude Code account)" -ForegroundColor White
+                Write-Host "`nUsage:" -ForegroundColor Yellow
+                Write-Host "  claude-paid" -ForegroundColor Gray
+                Write-Host "`nWhat it does:" -ForegroundColor Yellow
+                Write-Host "  - Updates ~/.claude/settings.json to use Anthropic API" -ForegroundColor Gray
+                Write-Host "  - Removes proxy configuration" -ForegroundColor Gray
+                Write-Host "  - Reloads PowerShell profile" -ForegroundColor Gray
+            }
+            "claude-free" {
+                Write-Host "`nCommand: claude-free" -ForegroundColor Cyan
+                Write-Host "Switches to FREE mode (Antigravity proxy)" -ForegroundColor White
+                Write-Host "`nUsage:" -ForegroundColor Yellow
+                Write-Host "  claude-free" -ForegroundColor Gray
+                Write-Host "`nWhat it does:" -ForegroundColor Yellow
+                Write-Host "  - Updates ~/.claude/settings.json to use proxy at localhost:8081" -ForegroundColor Gray
+                Write-Host "  - Starts proxy if not running" -ForegroundColor Gray
+                Write-Host "  - Uses your Google accounts via Antigravity" -ForegroundColor Gray
+            }
+            "dual-sessions" {
+                Write-Host "`nCommand: dual-sessions" -ForegroundColor Cyan
+                Write-Host "Starts TWO HappyCoder sessions (FREE and PAID) for mobile access" -ForegroundColor White
+                Write-Host "`nUsage:" -ForegroundColor Yellow
+                Write-Host "  dual-sessions                          # Basic usage" -ForegroundColor Gray
+                Write-Host "  dual-sessions -SessionName 'MyProject' # Custom name" -ForegroundColor Gray
+                Write-Host "  dual-sessions -NoSymlinks              # Disable symlinks" -ForegroundColor Gray
+                Write-Host "`nWhat it does:" -ForegroundColor Yellow
+                Write-Host "  - Creates symlinked directories (ProjectName-FREE and ProjectName-PAID)" -ForegroundColor Gray
+                Write-Host "  - Opens two PowerShell windows with color coding" -ForegroundColor Gray
+                Write-Host "    * GREEN window = FREE mode (Antigravity)" -ForegroundColor Gray
+                Write-Host "    * BLUE window = PAID mode (Claude Code)" -ForegroundColor Gray
+                Write-Host "  - Displays QR codes for HappyCoder mobile app" -ForegroundColor Gray
+                Write-Host "`nIn HappyCoder app:" -ForegroundColor Yellow
+                Write-Host "  You'll see two distinct sessions you can switch between!" -ForegroundColor Green
+            }
+            "check-usage" {
+                Write-Host "`nCommand: check-usage" -ForegroundColor Cyan
+                Write-Host "Displays usage quotas for all accounts" -ForegroundColor White
+                Write-Host "`nUsage:" -ForegroundColor Yellow
+                Write-Host "  check-usage" -ForegroundColor Gray
+                Write-Host "`nShows:" -ForegroundColor Yellow
+                Write-Host "  - Current account priority order" -ForegroundColor Gray
+                Write-Host "  - Claude/Gemini quota remaining for each Google account" -ForegroundColor Gray
+                Write-Host "  - Reset times for quotas" -ForegroundColor Gray
+            }
+            default {
+                Write-Host "`nCommand not found: $Command" -ForegroundColor Red
+                Write-Host "Run 'claude-help' to see all available commands" -ForegroundColor Yellow
+            }
+        }
+        Write-Host ""
+        return
+    }
+
+    # Show general help
+    Clear-Host
+    Write-Host ""
+    Write-Host "========================================" -ForegroundColor Cyan
+    Write-Host "  CLAUDE PROXY MANAGER - HELP" -ForegroundColor Cyan
+    Write-Host "========================================" -ForegroundColor Cyan
+    Write-Host ""
+
+    Write-Host "MODE SWITCHING" -ForegroundColor Yellow
+    Write-Host "  claude-paid       Switch to PAID Claude Code account" -ForegroundColor White
+    Write-Host "  claude-free       Switch to FREE Antigravity proxy" -ForegroundColor White
+    Write-Host "  claude-mode       Show current mode and configuration" -ForegroundColor White
+    Write-Host ""
+
+    Write-Host "USAGE & MONITORING" -ForegroundColor Yellow
+    Write-Host "  check-usage       View quotas for all accounts" -ForegroundColor White
+    Write-Host "  start-proxy       Manually start Antigravity proxy" -ForegroundColor White
+    Write-Host ""
+
+    Write-Host "PRIORITY MANAGEMENT" -ForegroundColor Yellow
+    Write-Host "  init-priority     Initialize account priority configuration" -ForegroundColor White
+    Write-Host "  get-priority      View current priority order" -ForegroundColor White
+    Write-Host "  set-priority      Change account priority order" -ForegroundColor White
+    Write-Host ""
+
+    Write-Host "HAPPYCODER (MOBILE ACCESS)" -ForegroundColor Yellow
+    Write-Host "  happy-free        Start HappyCoder with Antigravity" -ForegroundColor White
+    Write-Host "  happy-paid        Start HappyCoder with Claude Code" -ForegroundColor White
+    Write-Host "  dual-sessions     Start BOTH sessions (RECOMMENDED)" -ForegroundColor Green
+    Write-Host "                    Creates distinct FREE/PAID sessions for mobile" -ForegroundColor Gray
+    Write-Host ""
+
+    Write-Host "HELP & DOCUMENTATION" -ForegroundColor Yellow
+    Write-Host "  claude-help              Show this help message" -ForegroundColor White
+    Write-Host "  claude-help <command>    Show detailed help for a command" -ForegroundColor White
+    Write-Host "                           Example: claude-help dual-sessions" -ForegroundColor Gray
+    Write-Host ""
+
+    Write-Host "========================================" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "QUICK START:" -ForegroundColor Green
+    Write-Host "  1. Run 'check-usage' to see your accounts" -ForegroundColor Gray
+    Write-Host "  2. Run 'claude-free' or 'claude-paid' to switch modes" -ForegroundColor Gray
+    Write-Host "  3. For mobile: Run 'dual-sessions' and scan QR codes" -ForegroundColor Gray
+    Write-Host ""
+    Write-Host "Documentation: https://github.com/brandonkchow/claude-proxy-manager" -ForegroundColor Cyan
+    Write-Host ""
+}
+
 # Aliases for convenience (all lowercase)
 Set-Alias -Name claude-paid -Value Use-ClaudePaid
 Set-Alias -Name claude-free -Value Use-ClaudeFree
@@ -150,6 +262,7 @@ Set-Alias -Name start-proxy -Value Start-AntigravityProxy
 Set-Alias -Name init-priority -Value Initialize-ClaudePriority
 Set-Alias -Name get-priority -Value Get-ClaudePriority
 Set-Alias -Name set-priority -Value Set-ClaudePriority
+Set-Alias -Name claude-help -Value Show-ClaudeHelp
 
 # HappyCoder Dual-Session Functions
 function Start-HappyFree {
@@ -201,18 +314,22 @@ function Start-HappyPaid {
 function Start-DualSessions {
     param(
         [string]$WorkingDirectory = (Get-Location).Path,
-        [switch]$UseSymlinks  # Creates symlinks for distinct session names in HappyCoder app
+        [string]$SessionName,  # Custom session name (defaults to directory name)
+        [switch]$NoSymlinks    # Disable symlinks (NOT recommended - sessions will have identical names)
     )
 
     Write-Host "Setting up dual HappyCoder sessions with QR codes..." -ForegroundColor Cyan
     Write-Host "  Working directory: $WorkingDirectory" -ForegroundColor Gray
 
-    # Create symlinks for unique session names (optional)
+    # Determine base session name
+    $baseName = if ($SessionName) { $SessionName } else { Split-Path -Leaf $WorkingDirectory }
+
+    # Create symlinks for unique session names (DEFAULT behavior)
     $freeDir = $WorkingDirectory
     $paidDir = $WorkingDirectory
+    $useSymlinks = -not $NoSymlinks
 
-    if ($UseSymlinks) {
-        $baseName = Split-Path -Leaf $WorkingDirectory
+    if ($useSymlinks) {
         $parentDir = Split-Path -Parent $WorkingDirectory
         $freeDir = Join-Path $parentDir "$baseName-FREE"
         $paidDir = Join-Path $parentDir "$baseName-PAID"
@@ -220,14 +337,47 @@ function Start-DualSessions {
         # Create symlinks if they don't exist
         if (-not (Test-Path $freeDir)) {
             Write-Host "  Creating FREE symlink: $freeDir" -ForegroundColor Gray
-            New-Item -ItemType SymbolicLink -Path $freeDir -Target $WorkingDirectory -ErrorAction SilentlyContinue | Out-Null
-        }
-        if (-not (Test-Path $paidDir)) {
-            Write-Host "  Creating PAID symlink: $paidDir" -ForegroundColor Gray
-            New-Item -ItemType SymbolicLink -Path $paidDir -Target $WorkingDirectory -ErrorAction SilentlyContinue | Out-Null
+            try {
+                New-Item -ItemType SymbolicLink -Path $freeDir -Target $WorkingDirectory -ErrorAction Stop | Out-Null
+                Write-Host "    [OK] FREE symlink created" -ForegroundColor Green
+            } catch {
+                Write-Host "    [!] Failed to create symlink (may need admin rights)" -ForegroundColor Yellow
+                Write-Host "        Falling back to same directory" -ForegroundColor Yellow
+                $freeDir = $WorkingDirectory
+                $paidDir = $WorkingDirectory
+                $useSymlinks = $false
+            }
+        } else {
+            Write-Host "    [OK] FREE symlink already exists" -ForegroundColor Green
         }
 
-        Write-Host "  Sessions will appear as '$baseName-FREE' and '$baseName-PAID' in HappyCoder app" -ForegroundColor Green
+        if ($useSymlinks -and -not (Test-Path $paidDir)) {
+            Write-Host "  Creating PAID symlink: $paidDir" -ForegroundColor Gray
+            try {
+                New-Item -ItemType SymbolicLink -Path $paidDir -Target $WorkingDirectory -ErrorAction Stop | Out-Null
+                Write-Host "    [OK] PAID symlink created" -ForegroundColor Green
+            } catch {
+                Write-Host "    [!] Failed to create symlink (may need admin rights)" -ForegroundColor Yellow
+                Write-Host "        Falling back to same directory" -ForegroundColor Yellow
+                $freeDir = $WorkingDirectory
+                $paidDir = $WorkingDirectory
+                $useSymlinks = $false
+            }
+        } elseif ($useSymlinks) {
+            Write-Host "    [OK] PAID symlink already exists" -ForegroundColor Green
+        }
+
+        if ($useSymlinks) {
+            Write-Host "`n  Sessions will appear in HappyCoder app as:" -ForegroundColor Cyan
+            Write-Host "    - $baseName-FREE (Antigravity)" -ForegroundColor Green
+            Write-Host "    - $baseName-PAID (Claude Code)" -ForegroundColor Blue
+        }
+    }
+
+    if (-not $useSymlinks) {
+        Write-Host "`n  [WARNING] Both sessions use the same directory!" -ForegroundColor Yellow
+        Write-Host "    They will appear identical in the HappyCoder app." -ForegroundColor Yellow
+        Write-Host "    Use window colors (GREEN/BLUE) to identify them." -ForegroundColor Yellow
     }
 
     # Ensure proxy is running first (for FREE mode)
@@ -257,44 +407,71 @@ function Start-DualSessions {
     }
 
     # Open FREE mode window with GREEN theme
-    Write-Host "  Opening FREE mode window (Antigravity)..." -ForegroundColor Yellow
+    Write-Host "`n  Opening FREE mode window (Antigravity)..." -ForegroundColor Yellow
+    $sessionLabel = if ($useSymlinks) { "$baseName-FREE" } else { "$baseName [GREEN]" }
     Start-Process powershell -ArgumentList "-NoExit", "-Command", @"
 Set-Location '$freeDir'
-`$Host.UI.RawUI.WindowTitle = '[FREE] HappyCoder - Antigravity Proxy'
-Write-Host '========================================================' -ForegroundColor Green
-Write-Host '                                                        ' -ForegroundColor Green
-Write-Host '            FREE MODE - ANTIGRAVITY PROXY               ' -ForegroundColor Green
-Write-Host '                                                        ' -ForegroundColor Green
-Write-Host '========================================================' -ForegroundColor Green
+`$Host.UI.RawUI.WindowTitle = 'FREE - $sessionLabel'
+`$Host.UI.RawUI.BackgroundColor = 'DarkGreen'
+`$Host.UI.RawUI.ForegroundColor = 'White'
+Clear-Host
 Write-Host ''
-Write-Host 'Scan the QR code below with HappyCoder mobile app' -ForegroundColor Yellow
-Write-Host 'Directory: $freeDir' -ForegroundColor Gray
+Write-Host '  ========================================================' -ForegroundColor Green
+Write-Host '  ||                                                    ||' -ForegroundColor Green
+Write-Host '  ||        [FREE] MODE - ANTIGRAVITY PROXY            ||' -ForegroundColor Green
+Write-Host '  ||                                                    ||' -ForegroundColor Green
+Write-Host '  ========================================================' -ForegroundColor Green
+Write-Host ''
+Write-Host '  Session: $sessionLabel' -ForegroundColor Yellow
+Write-Host '  Directory: $freeDir' -ForegroundColor Gray
+Write-Host ''
+Write-Host '  SCAN QR CODE BELOW WITH HAPPYCODER APP' -ForegroundColor Yellow
+Write-Host '  --> This session uses FREE Google accounts' -ForegroundColor White
 Write-Host ''
 happy --claude-env ANTHROPIC_AUTH_TOKEN=test --claude-env ANTHROPIC_BASE_URL=http://localhost:8081
 "@
 
+    # Small delay to ensure windows don't overlap QR codes
+    Start-Sleep -Milliseconds 500
+
     # Open PAID mode window with BLUE theme
     Write-Host "  Opening PAID mode window (Claude Code)..." -ForegroundColor Yellow
+    $sessionLabel = if ($useSymlinks) { "$baseName-PAID" } else { "$baseName [BLUE]" }
     Start-Process powershell -ArgumentList "-NoExit", "-Command", @"
 Set-Location '$paidDir'
-`$Host.UI.RawUI.WindowTitle = '[PAID] HappyCoder - Claude Code'
-Write-Host '========================================================' -ForegroundColor Blue
-Write-Host '                                                        ' -ForegroundColor Blue
-Write-Host '              PAID MODE - CLAUDE CODE                   ' -ForegroundColor Blue
-Write-Host '                                                        ' -ForegroundColor Blue
-Write-Host '========================================================' -ForegroundColor Blue
+`$Host.UI.RawUI.WindowTitle = 'PAID - $sessionLabel'
+`$Host.UI.RawUI.BackgroundColor = 'DarkBlue'
+`$Host.UI.RawUI.ForegroundColor = 'White'
+Clear-Host
 Write-Host ''
-Write-Host 'Scan the QR code below with HappyCoder mobile app' -ForegroundColor Yellow
-Write-Host 'Directory: $paidDir' -ForegroundColor Gray
+Write-Host '  ========================================================' -ForegroundColor Blue
+Write-Host '  ||                                                    ||' -ForegroundColor Blue
+Write-Host '  ||          [PAID] MODE - CLAUDE CODE                ||' -ForegroundColor Blue
+Write-Host '  ||                                                    ||' -ForegroundColor Blue
+Write-Host '  ========================================================' -ForegroundColor Blue
+Write-Host ''
+Write-Host '  Session: $sessionLabel' -ForegroundColor Yellow
+Write-Host '  Directory: $paidDir' -ForegroundColor Gray
+Write-Host ''
+Write-Host '  SCAN QR CODE BELOW WITH HAPPYCODER APP' -ForegroundColor Yellow
+Write-Host '  --> This session uses PAID Claude Code account' -ForegroundColor White
 Write-Host ''
 happy
 "@
 
-    Write-Host "`n  [OK] Two HappyCoder windows opened!" -ForegroundColor Green
-    Write-Host "  GREEN window = FREE mode (Antigravity)" -ForegroundColor Green
-    Write-Host "  BLUE window = PAID mode (Claude Code)" -ForegroundColor Blue
-    Write-Host "`n  Scan the QR codes in each window with your mobile app" -ForegroundColor Cyan
-    Write-Host "  You can now switch between FREE and PAID modes in HappyCoder!" -ForegroundColor Green
+    Write-Host "`n  SUCCESS: Two HappyCoder windows opened!" -ForegroundColor Green
+    Write-Host ""
+    if ($useSymlinks) {
+        Write-Host "  In HappyCoder mobile app, you'll see:" -ForegroundColor Cyan
+        Write-Host "    [FREE] $baseName-FREE  <- Antigravity (free)" -ForegroundColor Green
+        Write-Host "    [PAID] $baseName-PAID  <- Claude Code (paid)" -ForegroundColor Blue
+    } else {
+        Write-Host "  Look for window colors to identify sessions:" -ForegroundColor Cyan
+        Write-Host "    Green background  = FREE mode (Antigravity)" -ForegroundColor Green
+        Write-Host "    Blue background   = PAID mode (Claude Code)" -ForegroundColor Blue
+    }
+    Write-Host ""
+    Write-Host "  Scan both QR codes to switch between sessions on mobile!" -ForegroundColor Yellow
 }
 
 Set-Alias -Name happy-free -Value Start-HappyFree

@@ -63,15 +63,22 @@ Claude Proxy Manager lets you:
 
 ## 📖 Documentation
 
+- **[Quick Reference](docs/QUICK_REFERENCE.md)** - Command cheat sheet and common workflows ⭐
 - [Setup Guide](docs/SETUP.md) - Detailed installation instructions
 - [Usage Guide](docs/USAGE.md) - Daily workflows and commands
 - [Troubleshooting](docs/TROUBLESHOOTING.md) - Common issues and solutions
 - [Remote Access](docs/REMOTE_ACCESS.md) - SSH, tmux, Happy Coder
 - [Architecture](docs/ARCHITECTURE.md) - How it works under the hood
 
+**Built-in help:** Run `claude-help` anytime in PowerShell!
+
 ## 🎯 Quick Commands
 
 ```powershell
+# Get help anytime!
+claude-help                      # Show all commands
+claude-help dual-sessions        # Detailed help for specific command
+
 # Check current mode and quotas
 check-usage
 
@@ -88,8 +95,48 @@ claude-mode
 start-proxy
 
 # Configure priority order
-Set-ClaudePriority
+set-priority
+
+# HappyCoder mobile access
+happy-free          # Start HappyCoder with Antigravity
+happy-paid          # Start HappyCoder with Claude Code
+dual-sessions       # Start BOTH sessions for easy mobile switching (RECOMMENDED)
 ```
+
+### 📱 Dual Sessions for HappyCoder (Mobile Access)
+
+The `dual-sessions` command is the **best way** to use HappyCoder on mobile:
+
+```powershell
+# Simply run:
+dual-sessions
+```
+
+**What it does:**
+1. Creates symlinked directories (`myproject-FREE` and `myproject-PAID`)
+2. Starts the Antigravity proxy if needed
+3. Opens two color-coded PowerShell windows:
+   - 🟢 **Green** = FREE mode (Antigravity)
+   - 🔵 **Blue** = PAID mode (Claude Code)
+4. Displays QR codes for both sessions
+
+**In your HappyCoder mobile app, you'll see:**
+- 🟢 `myproject-FREE` ← Free Antigravity session
+- 🔵 `myproject-PAID` ← Paid Claude Code session
+
+**Benefits:**
+- Instantly switch between FREE and PAID on your phone
+- No need to stop/restart sessions
+- Clear visual identification in both desktop and mobile
+- Works great with tmux/psmux for persistent sessions
+
+**Advanced usage:**
+```powershell
+dual-sessions -SessionName "MyWork"  # Custom session name
+dual-sessions -NoSymlinks            # Disable symlinks (shows warning)
+```
+
+See [Remote Access Guide](docs/REMOTE_ACCESS.md) for SSH and tmux setup.
 
 ## 🤝 Contributing
 

@@ -2,6 +2,40 @@
 
 Complete guide for using Claude Proxy Manager remotely via SSH, tmux, and mobile workflows.
 
+## Quick Start: Dual Sessions (RECOMMENDED)
+
+The easiest way to access Claude on mobile is with the **dual-sessions** command:
+
+```powershell
+# From your Windows machine (local or via SSH)
+dual-sessions
+```
+
+**What this does:**
+1. Creates two symlinked directories (`YourProject-FREE` and `YourProject-PAID`)
+2. Opens two PowerShell windows (GREEN for FREE, BLUE for PAID)
+3. Displays QR codes in each window
+4. Sessions appear as distinct entries in HappyCoder mobile app
+
+**First-time symlink setup:**
+```powershell
+# If symlinks fail, enable Developer Mode (one-time, requires admin):
+.\enable-symlinks.ps1
+
+# OR use the elevated version:
+.\dual-sessions-elevated.ps1
+```
+
+After first setup, symlinks persist and no admin rights needed!
+
+**In HappyCoder app you'll see:**
+- `YourProject-FREE` (Antigravity - free Google accounts)
+- `YourProject-PAID` (Claude Code - paid account)
+
+Simply tap to switch between FREE and PAID modes!
+
+---
+
 ## SSH Setup
 
 > [!TIP]
@@ -378,20 +412,39 @@ happy-proxy  # or happy
 # 6. Continue with new mode!
 ```
 
-**Option 2: Use Two Separate Sessions**
+**Option 2: Use Dual Sessions (RECOMMENDED - Best Mobile Experience)**
 ```powershell
-# On Windows, create two tmux sessions:
+# EASIEST: Just run the dual-sessions command
+dual-sessions
+
+# This will:
+# 1. Create symlinked directories (myproject-FREE and myproject-PAID)
+# 2. Start proxy if needed
+# 3. Open two color-coded windows (GREEN = FREE, BLUE = PAID)
+# 4. Display QR codes for both sessions
+
+# In HappyCoder mobile app, you'll see:
+# 🟢 myproject-FREE  ← Free Antigravity session
+# 🔵 myproject-PAID  ← Paid Claude Code session
+
+# Advanced options:
+dual-sessions -SessionName "MyWork"  # Custom session name
+dual-sessions -NoSymlinks            # Disable symlinks (not recommended)
+```
+
+**Option 3: Manual Separate Sessions**
+```powershell
+# On Windows, create two tmux sessions manually:
 
 # Session 1: FREE mode
 tmux new -s happy-free
 start-proxy
-happy-proxy
+happy-free
 # Ctrl+B, D to detach
 
-# Session 2: PAID mode  
+# Session 2: PAID mode
 tmux new -s happy-paid
-claude-paid
-happy
+happy-paid
 # Ctrl+B, D to detach
 
 # From mobile:
@@ -400,7 +453,7 @@ happy
 # - Switch between them in HappyCoder app!
 ```
 
-**Option 3: Remote Desktop** (Easiest)
+**Option 4: Remote Desktop** (When dual-sessions isn't available)
 ```
 # Use Windows Remote Desktop or Chrome Remote Desktop
 # 1. Connect to Windows machine
