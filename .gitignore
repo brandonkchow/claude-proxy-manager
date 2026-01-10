@@ -51,3 +51,11 @@ build/
 # Test files
 test-results/
 coverage/
+
+# Agent Tools
+.agent/
+.gemini/
+
+# Private documentation
+CLAUDE.md
+
