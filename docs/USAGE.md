@@ -140,6 +140,12 @@ happy-paid
 get-priority
 ```
 
+**Note:** Priority configuration auto-initializes when you load your PowerShell profile. If priority.json is missing or incomplete, it will be created automatically by detecting:
+- Antigravity/Google accounts from the proxy
+- Claude Code authentication status
+
+You'll see a notification during profile load if auto-initialization runs.
+
 ### Change Priority
 
 ```powershell

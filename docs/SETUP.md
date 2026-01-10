@@ -53,6 +53,24 @@ After installation completes:
 # Close and reopen your PowerShell window
 ```
 
+**Auto-Initialization (New!):**
+When you reload your profile, it will automatically:
+- Detect if priority.json is missing or incomplete
+- Query the Antigravity proxy for available accounts
+- Create/update priority configuration
+- Display helpful status messages
+
+You'll see:
+```
+[INFO] Antigravity accounts detected. Updating priority configuration...
+Detecting available accounts...
+  [OK] Found Antigravity account: your.email@gmail.com
+  [OK] Claude Code authenticated
+[OK] Priority configuration updated
+```
+
+This happens automatically - no manual setup required!
+
 ### 3. Verify Installation
 
 ```powershell

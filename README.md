@@ -48,9 +48,11 @@ Claude Proxy Manager lets you:
 
 - 🔄 **Flexible Priority System** - Configure which accounts to use first
 - 🤖 **Auto-Start Proxy** - Proxy starts automatically when you need it
+- ⚡ **Auto-Initialize** - Priority config auto-detects accounts on first load
 - 📊 **Unified Usage View** - See all account quotas in one place
-- ⚡ **Smart Detection** - Auto-detects accounts and skips installed components
-- 🎯 **Simple Commands** - `claude-free`, `claude-paid`, `check-usage`
+- 🎯 **Smart Detection** - Auto-detects accounts and skips installed components
+- 💡 **Built-in Help** - Run `claude-help` anytime for command reference
+- 🎨 **Simple Commands** - `claude-free`, `claude-paid`, `check-usage`, `dual-sessions`
 
 ## 📋 Prerequisites
 
