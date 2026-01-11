@@ -77,7 +77,7 @@ if ($Mode -eq 'paid') {
     
     Write-Host "✅ Switched to FREE mode" -ForegroundColor Green
     Write-Host "   Using: Antigravity proxy (Google accounts)" -ForegroundColor Gray
-    Write-Host "   Accounts: anisenseiko@gmail.com, beastbzn@gmail.com" -ForegroundColor Gray
+    Write-Host "   Accounts: (Use 'check-usage' to see details)" -ForegroundColor Gray
 }
 
 # Save settings
