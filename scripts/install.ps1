@@ -6,6 +6,8 @@ param(
     [switch]$NonInteractive
 )
 
+# Ensure emojis render correctly
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $ErrorActionPreference = "Stop"
 
 Write-Host "`n========================================" -ForegroundColor Cyan
@@ -27,18 +29,18 @@ function Prompt-YesNo {
 }
 
 # Step 1: Check Prerequisites
-Write-Host "[1/8] Checking prerequisites..." -ForegroundColor Cyan
+Write-Host "📦 [1/8] Checking prerequisites..." -ForegroundColor Cyan
 
 # Check Node.js
 try {
     $nodeVersion = node --version 2>$null
     if ($nodeVersion) {
-        Write-Host "  [OK] Node.js $nodeVersion detected" -ForegroundColor Green
+        Write-Host "  ✅ Node.js $nodeVersion detected" -ForegroundColor Green
     } else {
         throw "Node.js not found"
     }
 } catch {
-    Write-Host "  [X] Node.js not found" -ForegroundColor Red
+    Write-Host "  ❌ Node.js not found" -ForegroundColor Red
     Write-Host "`nPlease install Node.js 18+ from: https://nodejs.org/" -ForegroundColor Yellow
     Write-Host "Then re-run this installer.`n" -ForegroundColor Yellow
     exit 1
@@ -48,65 +50,65 @@ try {
 try {
     $npmVersion = npm --version 2>$null
     if ($npmVersion) {
-        Write-Host "  [OK] npm $npmVersion detected" -ForegroundColor Green
+        Write-Host "  ✅ npm $npmVersion detected" -ForegroundColor Green
     }
 } catch {
-    Write-Host "  [X] npm not found (should come with Node.js)" -ForegroundColor Red
+    Write-Host "  ❌ npm not found (should come with Node.js)" -ForegroundColor Red
     exit 1
 }
 
 # Step 2: Check/Install Claude Code CLI
-Write-Host "`n[2/8] Checking Claude Code CLI..." -ForegroundColor Cyan
+Write-Host "`n🤖 [2/8] Checking Claude Code CLI..." -ForegroundColor Cyan
 
 try {
     $claudeVersion = claude --version 2>$null
     if ($claudeVersion) {
-        Write-Host "  [OK] Claude Code CLI detected" -ForegroundColor Green
+        Write-Host "  ✅ Claude Code CLI detected" -ForegroundColor Green
         $hasClaudeCLI = $true
     } else {
         throw "Not found"
     }
 } catch {
-    Write-Host "  [!] Claude Code CLI not found" -ForegroundColor Yellow
+    Write-Host "  ⚠️  Claude Code CLI not found" -ForegroundColor Yellow
     
     if (Prompt-YesNo "Install Claude Code CLI now?") {
         Write-Host "  Installing @anthropic-ai/claude-code..." -ForegroundColor Cyan
         npm install -g @anthropic-ai/claude-code
-        Write-Host "  [OK] Claude Code CLI installed" -ForegroundColor Green
+        Write-Host "  ✅ Claude Code CLI installed" -ForegroundColor Green
         $hasClaudeCLI = $true
     } else {
-        Write-Host "  [SKIP] Claude Code CLI installation skipped" -ForegroundColor Yellow
+        Write-Host "  ⏭️  Claude Code CLI installation skipped" -ForegroundColor Yellow
         $hasClaudeCLI = $false
     }
 }
 
 # Step 3: Check/Install antigravity-claude-proxy
-Write-Host "`n[3/8] Checking antigravity-claude-proxy..." -ForegroundColor Cyan
+Write-Host "`n🌐 [3/8] Checking antigravity-claude-proxy..." -ForegroundColor Cyan
 
 try {
     $proxyVersion = antigravity-claude-proxy --version 2>$null
     if ($proxyVersion) {
-        Write-Host "  [OK] antigravity-claude-proxy $proxyVersion detected" -ForegroundColor Green
+        Write-Host "  ✅ antigravity-claude-proxy $proxyVersion detected" -ForegroundColor Green
         $hasProxy = $true
     } else {
         throw "Not found"
     }
 } catch {
-    Write-Host "  [!] antigravity-claude-proxy not found" -ForegroundColor Yellow
+    Write-Host "  ⚠️  antigravity-claude-proxy not found" -ForegroundColor Yellow
     
     if (Prompt-YesNo "Install antigravity-claude-proxy now?") {
         Write-Host "  Installing antigravity-claude-proxy..." -ForegroundColor Cyan
         npm install -g antigravity-claude-proxy
-        Write-Host "  [OK] antigravity-claude-proxy installed" -ForegroundColor Green
+        Write-Host "  ✅ antigravity-claude-proxy installed" -ForegroundColor Green
         $hasProxy = $true
     } else {
-        Write-Host "  [SKIP] Proxy installation skipped" -ForegroundColor Yellow
+        Write-Host "  ⏭️  Proxy installation skipped" -ForegroundColor Yellow
         $hasProxy = $false
     }
 }
 
 # Step 4: Detect Accounts
-Write-Host "`n[4/8] Detecting accounts..." -ForegroundColor Cyan
+Write-Host "`n👤 [4/8] Detecting accounts..." -ForegroundColor Cyan
 
 $antigravityAccounts = @()
 if ($hasProxy) {
@@ -116,14 +118,14 @@ if ($hasProxy) {
             $response = Invoke-RestMethod -Uri "http://localhost:8081/account-limits?format=json" -ErrorAction Stop
             foreach ($account in $response.accounts) {
                 $antigravityAccounts += $account.email
-                Write-Host "  [OK] Found Antigravity account: $($account.email)" -ForegroundColor Green
+                Write-Host "  ✅ Found Antigravity account: $($account.email)" -ForegroundColor Green
             }
         } else {
-            Write-Host "  [!] Proxy not running - Antigravity accounts not detected" -ForegroundColor Yellow
+            Write-Host "  ⚠️  Proxy not running - Antigravity accounts not detected" -ForegroundColor Yellow
             Write-Host "      You can add accounts later with: antigravity-claude-proxy accounts add" -ForegroundColor Gray
         }
     } catch {
-        Write-Host "  [!] Could not detect Antigravity accounts" -ForegroundColor Yellow
+        Write-Host "  ⚠️  Could not detect Antigravity accounts" -ForegroundColor Yellow
     }
 }
 
@@ -133,17 +135,17 @@ if ($hasClaudeCLI) {
         $claudeTest = claude --version 2>$null
         $hasClaudeAuth = $claudeTest -ne $null
         if ($hasClaudeAuth) {
-            Write-Host "  [OK] Claude Code authenticated" -ForegroundColor Green
+            Write-Host "  ✅ Claude Code authenticated" -ForegroundColor Green
         }
     } catch {
-        Write-Host "  [!] Claude Code not authenticated" -ForegroundColor Yellow
+        Write-Host "  ⚠️  Claude Code not authenticated" -ForegroundColor Yellow
         Write-Host "      You can login later with: claude /login" -ForegroundColor Gray
     }
 }
 
 # Check if we have at least one account
 if (-not $hasClaudeAuth -and $antigravityAccounts.Count -eq 0) {
-    Write-Host "`n  [!] No accounts detected!" -ForegroundColor Yellow
+    Write-Host "`n  ⚠️  No accounts detected!" -ForegroundColor Yellow
     Write-Host "      You need at least one of:" -ForegroundColor Yellow
     Write-Host "        - Claude Code authentication (claude /login)" -ForegroundColor Gray
     Write-Host "        - Antigravity account (antigravity-claude-proxy accounts add)" -ForegroundColor Gray
@@ -152,7 +154,7 @@ if (-not $hasClaudeAuth -and $antigravityAccounts.Count -eq 0) {
 }
 
 # Step 5: Choose Priority
-Write-Host "`n[5/8] Configuring account priority..." -ForegroundColor Cyan
+Write-Host "`n⚖️ [5/8] Configuring account priority..." -ForegroundColor Cyan
 
 $defaultPriority = "claude-first"
 if ($antigravityAccounts.Count -gt 0 -and $hasClaudeAuth) {
@@ -171,7 +173,7 @@ if ($antigravityAccounts.Count -gt 0 -and $hasClaudeAuth) {
 Write-Host "  Priority: $defaultPriority" -ForegroundColor Green
 
 # Step 6: Install Files
-Write-Host "`n[6/8] Installing files..." -ForegroundColor Cyan
+Write-Host "`n📂 [6/8] Installing files..." -ForegroundColor Cyan
 
 $installDir = "$env:USERPROFILE\.claude\claude-proxy-manager"
 New-Item -ItemType Directory -Path "$installDir\scripts" -Force | Out-Null
@@ -186,15 +188,15 @@ Copy-Item "$scriptDir\switch-claude-mode.ps1" "$installDir\scripts\" -Force
 Copy-Item "$repoRoot\config\profile-snippet.ps1" "$installDir\config\" -Force
 Copy-Item "$repoRoot\config\update-checker.ps1" "$installDir\config\" -Force
 
-Write-Host "  [OK] Files installed to $installDir" -ForegroundColor Green
+Write-Host "  ✅ Files installed to $installDir" -ForegroundColor Green
 
 # Step 7: Configure PowerShell Profile
-Write-Host "`n[7/8] Configuring PowerShell profile..." -ForegroundColor Cyan
+Write-Host "`n⚙️ [7/8] Configuring PowerShell profile..." -ForegroundColor Cyan
 
 $profilePath = $PROFILE
 if (-not (Test-Path $profilePath)) {
     New-Item -ItemType File -Path $profilePath -Force | Out-Null
-    Write-Host "  [OK] Created PowerShell profile" -ForegroundColor Green
+    Write-Host "  ✅ Created PowerShell profile" -ForegroundColor Green
 }
 
 # Check if already configured
@@ -215,27 +217,27 @@ if (Test-Path `$repoPath) {
 }
 "@
     Add-Content -Path $profilePath -Value $snippet
-    Write-Host "  [OK] PowerShell profile updated" -ForegroundColor Green
+    Write-Host "  ✅ PowerShell profile updated" -ForegroundColor Green
 } else {
-    Write-Host "  [OK] PowerShell profile already configured" -ForegroundColor Green
+    Write-Host "  ✅ PowerShell profile already configured" -ForegroundColor Green
 }
 
 # Step 8: Initialize Priority
-Write-Host "`n[8/8] Initializing priority configuration..." -ForegroundColor Cyan
+Write-Host "`n🚀 [8/8] Initializing priority configuration..." -ForegroundColor Cyan
 
 . "$installDir\scripts\priority-functions.ps1"
 Initialize-ClaudePriority -DefaultPriority $defaultPriority | Out-Null
 
-Write-Host "  [OK] Priority configuration created" -ForegroundColor Green
+Write-Host "  ✅ Priority configuration created" -ForegroundColor Green
 
 # Step 9: Optional Remote Access Setup
-Write-Host "`n[9/9] Remote Access Setup (Optional)" -ForegroundColor Cyan
+Write-Host "`n📱 [9/9] Remote Access Setup (Optional)" -ForegroundColor Cyan
 Write-Host "  Set up SSH, tmux, and HappyCoder for mobile/remote access?" -ForegroundColor White
 
 if (Prompt-YesNo "Install remote access tools?" $false) {
     
     # 9a: Enable Windows OpenSSH Server (with UAC elevation)
-    Write-Host "`n  [9a] Checking OpenSSH Server..." -ForegroundColor Cyan
+    Write-Host "`n🔐 [9a] Checking OpenSSH Server..." -ForegroundColor Cyan
     
     try {
         $sshService = Get-WindowsCapability -Online -ErrorAction Stop | Where-Object Name -like 'OpenSSH.Server*'
@@ -251,7 +253,7 @@ Set-Service -Name sshd -StartupType 'Automatic'
 if (-not (Get-NetFirewallRule -Name 'OpenSSH-Server-In-TCP' -ErrorAction SilentlyContinue)) {
     New-NetFirewallRule -Name sshd -DisplayName 'OpenSSH Server (sshd)' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22 | Out-Null
 }
-Write-Host 'OpenSSH Server installed successfully!' -ForegroundColor Green
+Write-Host '✅ OpenSSH Server installed successfully!' -ForegroundColor Green
 pause
 "@
             
@@ -262,18 +264,18 @@ pause
             # Run with elevation
             try {
                 Start-Process powershell -ArgumentList "-ExecutionPolicy Bypass -File `"$tempScript`"" -Verb RunAs -Wait
-                Write-Host "  [OK] OpenSSH Server installed" -ForegroundColor Green
+                Write-Host "  ✅ OpenSSH Server installed" -ForegroundColor Green
             } catch {
-                Write-Host "  [!] User cancelled elevation or installation failed" -ForegroundColor Yellow
+                Write-Host "  ⚠️  User cancelled elevation or installation failed" -ForegroundColor Yellow
             }
             
             # Cleanup
             Remove-Item $tempScript -ErrorAction SilentlyContinue
         } else {
-            Write-Host "  [OK] OpenSSH Server already installed" -ForegroundColor Green
+            Write-Host "  ✅ OpenSSH Server already installed" -ForegroundColor Green
         }
     } catch {
-        Write-Host "  [!] Cannot check OpenSSH (requires admin privileges)" -ForegroundColor Yellow
+        Write-Host "  ⚠️  Cannot check OpenSSH (requires admin privileges)" -ForegroundColor Yellow
         Write-Host "      Attempting to install with elevation..." -ForegroundColor Cyan
         
         # Try elevation anyway
@@ -284,7 +286,7 @@ Set-Service -Name sshd -StartupType 'Automatic'
 if (-not (Get-NetFirewallRule -Name 'OpenSSH-Server-In-TCP' -ErrorAction SilentlyContinue)) {
     New-NetFirewallRule -Name sshd -DisplayName 'OpenSSH Server (sshd)' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22 | Out-Null
 }
-Write-Host 'OpenSSH Server installed successfully!' -ForegroundColor Green
+Write-Host '✅ OpenSSH Server installed successfully!' -ForegroundColor Green
 pause
 "@
         $tempScript = "$env:TEMP\install-openssh.ps1"
@@ -292,46 +294,46 @@ pause
         
         try {
             Start-Process powershell -ArgumentList "-ExecutionPolicy Bypass -File `"$tempScript`"" -Verb RunAs -Wait
-            Write-Host "  [OK] OpenSSH Server installed" -ForegroundColor Green
+            Write-Host "  ✅ OpenSSH Server installed" -ForegroundColor Green
         } catch {
-            Write-Host "  [!] Installation cancelled or failed" -ForegroundColor Yellow
+            Write-Host "  ⚠️  Installation cancelled or failed" -ForegroundColor Yellow
         }
         
         Remove-Item $tempScript -ErrorAction SilentlyContinue
     }
     
     # 9b: Install psmux (Windows tmux alternative)
-    Write-Host "`n  [9b] Checking psmux..." -ForegroundColor Cyan
+    Write-Host "`n🖥️  [9b] Checking psmux..." -ForegroundColor Cyan
     try {
         $psmuxVersion = psmux --version 2>$null
         if ($psmuxVersion) {
-            Write-Host "  [OK] psmux already installed" -ForegroundColor Green
+            Write-Host "  ✅ psmux already installed" -ForegroundColor Green
         } else {
             throw "Not found"
         }
     } catch {
-        Write-Host "  [!] psmux not found" -ForegroundColor Yellow
+        Write-Host "  ⚠️  psmux not found" -ForegroundColor Yellow
         
         # Check if Chocolatey is installed
         try {
             $chocoVersion = choco --version 2>$null
             if ($chocoVersion) {
-                Write-Host "  [OK] Chocolatey detected, installing psmux..." -ForegroundColor Cyan
+                Write-Host "  ✅ Chocolatey detected, installing psmux..." -ForegroundColor Cyan
                 
                 # Create elevated script for psmux install
                 $installScript = "choco install psmux -y; Read-Host 'PsMux Installed! Press Enter to continue...'"
                 
                 try {
                     Start-Process powershell -ArgumentList "-Command", $installScript -Verb RunAs -Wait
-                    Write-Host "  [OK] psmux installation completed" -ForegroundColor Green
+                    Write-Host "  ✅ psmux installation completed" -ForegroundColor Green
                 } catch {
-                    Write-Host "  [!] Installation cancelled or failed" -ForegroundColor Yellow
+                    Write-Host "  ⚠️  Installation cancelled or failed" -ForegroundColor Yellow
                 }
             } else {
                 throw "Chocolatey not found"
             }
         } catch {
-            Write-Host "  [!] Chocolatey not installed" -ForegroundColor Yellow
+            Write-Host "  ⚠️  Chocolatey not installed" -ForegroundColor Yellow
             Write-Host "  Installing Chocolatey..." -ForegroundColor Cyan
             
             # Install Chocolatey with elevation
@@ -340,7 +342,7 @@ Set-ExecutionPolicy Bypass -Scope Process -Force
 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
 iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
 choco install psmux -y
-Write-Host 'Chocolatey and psmux installed successfully!' -ForegroundColor Green
+Write-Host '✅ Chocolatey and psmux installed successfully!' -ForegroundColor Green
 pause
 "@
             $tempScript = "$env:TEMP\install-choco-psmux.ps1"
@@ -348,9 +350,9 @@ pause
             
             try {
                 Start-Process powershell -ArgumentList "-ExecutionPolicy Bypass -File `"$tempScript`"" -Verb RunAs -Wait
-                Write-Host "  [OK] Chocolatey and psmux installed" -ForegroundColor Green
+                Write-Host "  ✅ Chocolatey and psmux installed" -ForegroundColor Green
             } catch {
-                Write-Host "  [!] Installation cancelled or failed" -ForegroundColor Yellow
+                Write-Host "  ⚠️  Installation cancelled or failed" -ForegroundColor Yellow
                 Write-Host "      You can install manually later:" -ForegroundColor Gray
                 Write-Host "      1. Install Chocolatey: https://chocolatey.org/install" -ForegroundColor Gray
                 Write-Host "      2. Run: choco install psmux" -ForegroundColor Gray
@@ -361,22 +363,22 @@ pause
     }
     
     # 9c: Install HappyCoder CLI
-    Write-Host "`n  [9c] Checking HappyCoder CLI..." -ForegroundColor Cyan
+    Write-Host "`n😃 [9c] Checking HappyCoder CLI..." -ForegroundColor Cyan
     try {
         $happyVersion = happy --version 2>$null
         if ($happyVersion) {
-            Write-Host "  [OK] HappyCoder CLI already installed" -ForegroundColor Green
+            Write-Host "  ✅ HappyCoder CLI already installed" -ForegroundColor Green
         } else {
             throw "Not found"
         }
     } catch {
         Write-Host "  Installing HappyCoder CLI..." -ForegroundColor Cyan
         npm install -g happy-coder
-        Write-Host "  [OK] HappyCoder CLI installed" -ForegroundColor Green
+        Write-Host "  ✅ HappyCoder CLI installed" -ForegroundColor Green
     }
     
     # 9d: Create dual-session aliases
-    Write-Host "`n  [9d] Creating dual-session aliases..." -ForegroundColor Cyan
+    Write-Host "`n🔄 [9d] Creating dual-session aliases..." -ForegroundColor Cyan
     
     $remoteAliases = @"
 
@@ -404,7 +406,7 @@ function Start-DualSessions {
     Write-Host "  Creating PAID session (happy-paid)..." -ForegroundColor Yellow
     Start-Process powershell -ArgumentList "-NoExit", "-Command", "psmux new -s happy-paid 'powershell -NoExit -Command ``"claude-paid; Start-HappyPaid``"'"
     
-    Write-Host "`n  [OK] Dual sessions created!" -ForegroundColor Green
+    Write-Host "`n  ✅ Dual sessions created!" -ForegroundColor Green
     Write-Host "      - happy-free: Antigravity proxy" -ForegroundColor Gray
     Write-Host "      - happy-paid: Claude Code paid" -ForegroundColor Gray
     Write-Host "`n  Scan both QR codes in HappyCoder app to switch between them!" -ForegroundColor Cyan
@@ -419,19 +421,19 @@ Set-Alias -Name dual-sessions -Value Start-DualSessions
     $profileContent = Get-Content $profilePath -Raw -ErrorAction SilentlyContinue
     if ($profileContent -notmatch "HappyCoder Dual-Session") {
         Add-Content -Path $profilePath -Value $remoteAliases
-        Write-Host "  [OK] Dual-session aliases added to profile" -ForegroundColor Green
+        Write-Host "  ✅ Dual-session aliases added to profile" -ForegroundColor Green
     } else {
-        Write-Host "  [OK] Dual-session aliases already configured" -ForegroundColor Green
+        Write-Host "  ✅ Dual-session aliases already configured" -ForegroundColor Green
     }
     
-    Write-Host "`n  [OK] Remote access setup complete!" -ForegroundColor Green
+    Write-Host "`n  ✅ Remote access setup complete!" -ForegroundColor Green
     Write-Host "`n  New commands available:" -ForegroundColor Cyan
     Write-Host "    happy-free       Start HappyCoder with Antigravity" -ForegroundColor White
     Write-Host "    happy-paid       Start HappyCoder with Claude Code" -ForegroundColor White
     Write-Host "    dual-sessions    Start both sessions for easy switching" -ForegroundColor White
     
 } else {
-    Write-Host "  [SKIP] Remote access setup skipped" -ForegroundColor Yellow
+    Write-Host "  ⏭️  Remote access setup skipped" -ForegroundColor Yellow
     Write-Host "  You can run this later with: .\scripts\install-remote.ps1" -ForegroundColor Gray
 }
 

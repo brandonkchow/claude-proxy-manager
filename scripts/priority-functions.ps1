@@ -1,6 +1,9 @@
 # Claude Proxy Manager - Priority Management Functions
 # These functions manage the account priority order
 
+# Ensure emojis render correctly
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+
 function Initialize-ClaudePriority {
     <#
     .SYNOPSIS
@@ -39,11 +42,11 @@ function Initialize-ClaudePriority {
                     email = $account.email
                     enabled = $true
                 }
-                Write-Host "  [OK] Found Antigravity account: $($account.email)" -ForegroundColor Green
+                Write-Host "  ✅ Found Antigravity account: $($account.email)" -ForegroundColor Green
             }
         }
     } catch {
-        Write-Host "  [!] Proxy not running or no accounts found" -ForegroundColor Yellow
+        Write-Host "  ⚠️  Proxy not running or no accounts found" -ForegroundColor Yellow
     }
     
     # Detect Claude Code authentication
@@ -56,7 +59,7 @@ function Initialize-ClaudePriority {
     }
     
     if ($hasClaudeAuth) {
-        Write-Host "  [OK] Claude Code authenticated" -ForegroundColor Green
+        Write-Host "  ✅ Claude Code authenticated" -ForegroundColor Green
     }
     
     # Build priority list based on preference
@@ -163,10 +166,10 @@ function Set-ClaudePriority {
             if ($claudeAccount) {
                 $priority.priority = @($claudeAccount) + $otherAccounts
                 $priority | ConvertTo-Json -Depth 10 | Set-Content $priorityPath -Encoding utf8
-                Write-Host "`n[OK] Claude Code moved to first priority" -ForegroundColor Green
+                Write-Host "`n✅ Claude Code moved to first priority" -ForegroundColor Green
                 Get-ClaudePriority
             } else {
-                Write-Host "`n[X] No Claude Code account found" -ForegroundColor Red
+                Write-Host "`n❌ No Claude Code account found" -ForegroundColor Red
             }
         }
         "2" {
@@ -177,10 +180,10 @@ function Set-ClaudePriority {
             if ($antigravityAccounts) {
                 $priority.priority = $antigravityAccounts + @($claudeAccount)
                 $priority | ConvertTo-Json -Depth 10 | Set-Content $priorityPath -Encoding utf8
-                Write-Host "`n[OK] Antigravity accounts moved to first priority" -ForegroundColor Green
+                Write-Host "`n✅ Antigravity accounts moved to first priority" -ForegroundColor Green
                 Get-ClaudePriority
             } else {
-                Write-Host "`n[X] No Antigravity accounts found" -ForegroundColor Red
+                Write-Host "`n❌ No Antigravity accounts found" -ForegroundColor Red
             }
         }
         "3" {
@@ -195,20 +198,20 @@ function Set-ClaudePriority {
                     $priority | ConvertTo-Json -Depth 10 | Set-Content $priorityPath -Encoding utf8
                     
                     $status = if ($priority.priority[$index].enabled) { "enabled" } else { "disabled" }
-                    Write-Host "`n[OK] Account $($priority.priority[$index].name) $status" -ForegroundColor Green
+                    Write-Host "`n✅ Account $($priority.priority[$index].name) $status" -ForegroundColor Green
                     Get-ClaudePriority
                 } else {
-                    Write-Host "`n[X] Invalid account number" -ForegroundColor Red
+                    Write-Host "`n❌ Invalid account number" -ForegroundColor Red
                 }
             } catch {
-                Write-Host "`n[X] Invalid input" -ForegroundColor Red
+                Write-Host "`n❌ Invalid input" -ForegroundColor Red
             }
         }
         "4" {
             Write-Host "`nCancelled" -ForegroundColor Yellow
         }
         default {
-            Write-Host "`n[X] Invalid choice" -ForegroundColor Red
+            Write-Host "`n❌ Invalid choice" -ForegroundColor Red
         }
     }
 }
