@@ -22,9 +22,6 @@ param(
     [string]$Mode
 )
 
-# Ensure emojis render correctly
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-
 $settingsPath = "$env:USERPROFILE\.claude\settings.json"
 
 # Backup current settings
