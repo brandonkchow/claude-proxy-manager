@@ -490,9 +490,14 @@ function Start-DualSessions {
     # Open FREE mode window with GREEN theme
     Write-Host "`n  Opening FREE mode window (Antigravity)..." -ForegroundColor Yellow
     $sessionLabel = if ($useSymlinks) { "$baseName-FREE" } else { "$baseName [GREEN]" }
+
+    # Escape single quotes in paths/labels to prevent command injection
+    $safeFreeDir = $freeDir -replace "'", "''"
+    $safeSessionLabel = $sessionLabel -replace "'", "''"
+
     Start-Process powershell -ArgumentList "-NoExit", "-Command", @"
-Set-Location '$freeDir'
-`$Host.UI.RawUI.WindowTitle = 'FREE - $sessionLabel'
+Set-Location '$safeFreeDir'
+`$Host.UI.RawUI.WindowTitle = 'FREE - $safeSessionLabel'
 `$Host.UI.RawUI.BackgroundColor = 'DarkGreen'
 `$Host.UI.RawUI.ForegroundColor = 'White'
 Clear-Host
@@ -518,9 +523,14 @@ happy --claude-env ANTHROPIC_AUTH_TOKEN=test --claude-env ANTHROPIC_BASE_URL=htt
     # Open PAID mode window with BLUE theme
     Write-Host "  Opening PAID mode window (Claude Code)..." -ForegroundColor Yellow
     $sessionLabel = if ($useSymlinks) { "$baseName-PAID" } else { "$baseName [BLUE]" }
+
+    # Escape single quotes in paths/labels to prevent command injection
+    $safePaidDir = $paidDir -replace "'", "''"
+    $safeSessionLabel = $sessionLabel -replace "'", "''"
+
     Start-Process powershell -ArgumentList "-NoExit", "-Command", @"
-Set-Location '$paidDir'
-`$Host.UI.RawUI.WindowTitle = 'PAID - $sessionLabel'
+Set-Location '$safePaidDir'
+`$Host.UI.RawUI.WindowTitle = 'PAID - $safeSessionLabel'
 `$Host.UI.RawUI.BackgroundColor = 'DarkBlue'
 `$Host.UI.RawUI.ForegroundColor = 'White'
 Clear-Host
