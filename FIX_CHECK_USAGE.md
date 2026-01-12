@@ -3,7 +3,7 @@
 ## Problem
 The `check-usage` command shows empty quota values like:
 ```
-- anisenseiko@gmail.com
+- user1@gmail.com
   Claude:  / remaining
   Gemini:  / remaining
 ```
@@ -37,8 +37,8 @@ You'll see:
 ```
 [INFO] Antigravity accounts detected. Updating priority configuration...
 Detecting available accounts...
-  [OK] Found Antigravity account: anisenseiko@gmail.com
-  [OK] Found Antigravity account: beastbzn@gmail.com
+  [OK] Found Antigravity account: user1@gmail.com
+  [OK] Found Antigravity account: user2@gmail.com
   [OK] Claude Code authenticated
 [OK] Priority configuration updated
 ```
@@ -53,11 +53,11 @@ init-priority
 ## After Fix
 The output will show proper quotas:
 ```
-[1] FREE Antigravity - anisenseiko@gmail.com
+[1] FREE Antigravity - user1@gmail.com
     Claude (Sonnet 4.5): 14% (Resets: 2026-01-10 6:24 AM)
     Gemini (Flash 3):    100% (Resets: 2026-01-10 7:22 AM)
 
-[2] FREE Antigravity - beastbzn@gmail.com
+[2] FREE Antigravity - user2@gmail.com
     Claude (Sonnet 4.5): 35% (Resets: 2026-01-10 6:57 AM)
     Gemini (Flash 3):    100% (Resets: 2026-01-10 7:22 AM)
 
