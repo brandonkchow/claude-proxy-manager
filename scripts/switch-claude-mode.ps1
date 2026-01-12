@@ -66,10 +66,26 @@ if ($Mode -eq 'paid') {
     $env:ANTHROPIC_BASE_URL = 'http://localhost:8081'
     $env:ANTHROPIC_AUTH_TOKEN = 'test'
     
-    # Check if proxy is running
+    # Check if proxy is running and fetch accounts
     try {
         $response = Invoke-WebRequest -Uri "http://localhost:8081/health" -UseBasicParsing -TimeoutSec 2 -ErrorAction Stop
         Write-Host "✅ Proxy server is running" -ForegroundColor Green
+
+        # Try to fetch accounts to display them
+        try {
+            $accountsResponse = Invoke-WebRequest -Uri "http://localhost:8081/account-limits?format=json" -UseBasicParsing -TimeoutSec 2 -ErrorAction SilentlyContinue
+            if ($accountsResponse) {
+                $accountsData = $accountsResponse.Content | ConvertFrom-Json
+                $emails = $accountsData.accounts.email -join ", "
+                if ($emails) {
+                    Write-Host "   Accounts: $emails" -ForegroundColor Gray
+                } else {
+                     Write-Host "   Accounts: (None detected)" -ForegroundColor Gray
+                }
+            }
+        } catch {
+            Write-Host "   Accounts: (Use 'check-usage' to see details)" -ForegroundColor Gray
+        }
     } catch {
         Write-Host "⚠️  Proxy server is NOT running!" -ForegroundColor Yellow
         Write-Host "   Start it with: `$env:PORT = '8081'; antigravity-claude-proxy start" -ForegroundColor Gray
@@ -77,7 +93,6 @@ if ($Mode -eq 'paid') {
     
     Write-Host "✅ Switched to FREE mode" -ForegroundColor Green
     Write-Host "   Using: Antigravity proxy (Google accounts)" -ForegroundColor Gray
-    Write-Host "   Accounts: (Use 'check-usage' to see details)" -ForegroundColor Gray
 }
 
 # Save settings
