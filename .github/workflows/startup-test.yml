@@ -28,9 +28,20 @@ jobs:
     - name: Verify Proxy Install
       run: antigravity-claude-proxy --version
 
+    - name: Debug Environment
+      shell: pwsh
+      run: |
+        Write-Host "Debug Information:"
+        Write-Host "Node: $(node --version)"
+        Write-Host "NPM: $(npm --version)"
+        Get-Command antigravity-claude-proxy -ErrorAction SilentlyContinue | Select-Object Name, Source, Version | Format-List
+
     - name: Run Update Check Integration Test
       shell: pwsh
       run: |
+        # Ensure we can see errors without failing immediately on stderr
+        $ErrorActionPreference = 'Continue'
+
         # Set up environment variables that the script expects
         $env:USERPROFILE = $env:HOME
         if ($IsWindows) {

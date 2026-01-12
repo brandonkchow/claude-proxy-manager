@@ -7,6 +7,9 @@ function Check-AntigravityUpdate {
     )
 
     try {
+        # Prevent native commands (like npm) from triggering terminating errors on stderr output
+        $ErrorActionPreference = 'Continue'
+
         # Check if we've checked recently (cache for 24 hours)
         $cacheFile = "$env:USERPROFILE\.claude\.update-check-cache"
         $now = Get-Date
