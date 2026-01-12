@@ -22,13 +22,27 @@ function Check-AntigravityUpdate {
         }
 
         # Get installed version
-        $installedOutput = npm list -g antigravity-claude-proxy 2>&1 | Select-String "antigravity-claude-proxy@"
-        if (-not $installedOutput) {
-            # Not installed, skip
-            return
+        # Optimization: Try direct execution first (milliseconds) vs npm list (seconds)
+        $installedVersion = $null
+
+        try {
+            $versionOutput = antigravity-claude-proxy --version 2>&1
+            if ($LASTEXITCODE -eq 0 -and $versionOutput -match '(\d+\.\d+\.\d+)') {
+                $installedVersion = $matches[1]
+            }
+        } catch {
+            # Command not found or execution failed
         }
 
-        $installedVersion = ($installedOutput -split '@')[1].Trim()
+        # Fallback to npm list (slower) if direct check failed
+        if (-not $installedVersion) {
+            $installedOutput = npm list -g antigravity-claude-proxy --depth=0 2>&1 | Select-String "antigravity-claude-proxy@"
+            if (-not $installedOutput) {
+                # Not installed, skip
+                return
+            }
+            $installedVersion = ($installedOutput -split '@')[1].Trim()
+        }
 
         # Get latest version from npm
         $latestVersion = npm view antigravity-claude-proxy version 2>&1
