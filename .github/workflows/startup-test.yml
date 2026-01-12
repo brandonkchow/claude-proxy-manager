@@ -1,0 +1,57 @@
+name: Startup Integration Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  test-startup:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install Antigravity Claude Proxy
+      run: npm install -g antigravity-claude-proxy
+
+    - name: Verify Proxy Install
+      run: antigravity-claude-proxy --version
+
+    - name: Run Update Check Integration Test
+      shell: pwsh
+      run: |
+        # Set up environment variables that the script expects
+        $env:USERPROFILE = $env:HOME
+        if ($IsWindows) {
+            $env:USERPROFILE = $env:UserProfile
+        }
+
+        # Create necessary directories
+        $claudeDir = Join-Path $env:USERPROFILE ".claude"
+        if (-not (Test-Path $claudeDir)) {
+            New-Item -ItemType Directory -Path $claudeDir -Force
+        }
+
+        # Source the script
+        . ./config/update-checker.ps1
+
+        Write-Host "Running Check-AntigravityUpdate..."
+        try {
+            # Run the function
+            Check-AntigravityUpdate -Force
+            Write-Host "✅ Check-AntigravityUpdate completed successfully"
+        } catch {
+            Write-Host "❌ Check-AntigravityUpdate failed: $_"
+            exit 1
+        }
