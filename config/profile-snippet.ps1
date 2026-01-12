@@ -679,31 +679,50 @@ if (-not (Test-Path $priorityPath)) {
         # Silently fail - user can run init-priority manually
     }
 } else {
-    # Check if priority.json has Antigravity accounts
-    try {
-        $priorityConfig = Get-Content $priorityPath -Raw | ConvertFrom-Json
-        $hasAntigravity = $priorityConfig.priority | Where-Object { $_.type -eq 'antigravity' }
+    # Check if we should scan for new accounts (limit to once per 24h to improve startup speed)
+    $discoveryCachePath = "$env:USERPROFILE\.claude\.discovery-check-cache"
+    $shouldScan = $true
 
-        if (-not $hasAntigravity) {
-            # Check if proxy is running with accounts
-            try {
-                $proxyRunning = Test-NetConnection -ComputerName localhost -Port 8081 -InformationLevel Quiet -WarningAction SilentlyContinue -ErrorAction SilentlyContinue
-                if ($proxyRunning) {
-                    $limitsResponse = Invoke-WebRequest -Uri "http://localhost:8081/account-limits?format=json" -UseBasicParsing -TimeoutSec 2 -ErrorAction Stop
-                    $limits = $limitsResponse.Content | ConvertFrom-Json
-
-                    if ($limits.accounts -and $limits.accounts.Count -gt 0) {
-                        Write-Host "[INFO] Antigravity accounts detected. Updating priority configuration..." -ForegroundColor Yellow
-                        Initialize-ClaudePriority -DefaultPriority 'antigravity-first' -ErrorAction SilentlyContinue
-                        Write-Host "[OK] Priority configuration updated" -ForegroundColor Green
-                    }
-                }
-            } catch {
-                # Silently fail - proxy might not be running
-            }
+    if (Test-Path $discoveryCachePath) {
+        $lastScan = (Get-Item $discoveryCachePath).LastWriteTime
+        if ((Get-Date) -lt $lastScan.AddHours(24)) {
+            $shouldScan = $false
         }
-    } catch {
-        # Silently fail - invalid priority.json, user can fix manually
+    }
+
+    if ($shouldScan) {
+        # Update cache timestamp
+        if (-not (Test-Path $discoveryCachePath)) {
+            New-Item -Path $discoveryCachePath -ItemType File -Force | Out-Null
+        }
+        (Get-Item $discoveryCachePath).LastWriteTime = Get-Date
+
+        # Check if priority.json has Antigravity accounts
+        try {
+            $priorityConfig = Get-Content $priorityPath -Raw | ConvertFrom-Json
+            $hasAntigravity = $priorityConfig.priority | Where-Object { $_.type -eq 'antigravity' }
+
+            if (-not $hasAntigravity) {
+                # Check if proxy is running with accounts
+                try {
+                    $proxyRunning = Test-NetConnection -ComputerName localhost -Port 8081 -InformationLevel Quiet -WarningAction SilentlyContinue -ErrorAction SilentlyContinue
+                    if ($proxyRunning) {
+                        $limitsResponse = Invoke-WebRequest -Uri "http://localhost:8081/account-limits?format=json" -UseBasicParsing -TimeoutSec 2 -ErrorAction Stop
+                        $limits = $limitsResponse.Content | ConvertFrom-Json
+
+                        if ($limits.accounts -and $limits.accounts.Count -gt 0) {
+                            Write-Host "[INFO] Antigravity accounts detected. Updating priority configuration..." -ForegroundColor Yellow
+                            Initialize-ClaudePriority -DefaultPriority 'antigravity-first' -ErrorAction SilentlyContinue
+                            Write-Host "[OK] Priority configuration updated" -ForegroundColor Green
+                        }
+                    }
+                } catch {
+                    # Silently fail - proxy might not be running
+                }
+            }
+        } catch {
+            # Silently fail - invalid priority.json, user can fix manually
+        }
     }
 }
 
