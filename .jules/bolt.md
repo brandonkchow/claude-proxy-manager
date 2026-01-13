@@ -11,3 +11,7 @@
 ## 2024-05-22 - Optimize Profile Loading
 **Learning:** The `profile-snippet.ps1` runs on every PowerShell startup. It performs network requests (to `localhost:8081` for priority check) and file reads (`Get-Content`, `ConvertFrom-Json`).
 **Action:** Minimize work done during profile loading. Async checks or caching can improve startup time.
+
+## 2025-05-22 - Network Port Checks
+**Learning:** `Test-NetConnection` is Windows-specific and slow (often pings first). It is not available on standard Linux PowerShell Core.
+**Action:** Replace `Test-NetConnection` with `System.Net.Sockets.TcpClient` for fast (ms vs sec), cross-platform port checking.
