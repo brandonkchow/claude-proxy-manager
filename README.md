@@ -21,28 +21,13 @@ That's it! The installer will:
 - ✅ Add PowerShell functions
 - ✅ **Optional**: Install SSH, tmux, and HappyCoder for remote access
 
-> [!CAUTION]
-> **Thinking Model Incompatibility**
-> 
-> Do NOT switch between paid Claude Code and Antigravity proxy in the same conversation. Claude Code's thinking models (`-thinking` suffix) are incompatible with the Antigravity proxy.
-> 
-> **Why**: Antigravity proxy cannot process "thinking blocks" from Claude's extended thinking models. If you switch modes mid-conversation, you'll get API 400 errors.
-> 
-> **Solution**: Start a fresh conversation when switching modes:
-> - Exit current conversation: `/exit` in Claude CLI
-> - Switch modes: `claude-free` or `claude-paid`
-> - Start new conversation: `claude`
-> 
-> **Best Practice**: Set your preferred mode as default priority to avoid switching.
-
 ## 💡 What is This?
 
 Claude Proxy Manager lets you:
 
 1. **Use multiple Claude accounts** - Switch between paid Claude Code and free Antigravity accounts
-2. **Avoid thinking model conflicts** - Seamlessly move between conversations without API errors
-3. **Maximize your quota** - Automatically use the right account at the right time
-4. **Work remotely** - Perfect for SSH, tmux, and mobile workflows
+2. **Maximize your quota** - Automatically use the right account at the right time
+3. **Work remotely** - Perfect for SSH, tmux, and mobile workflows
 
 ## ✨ Features
 
