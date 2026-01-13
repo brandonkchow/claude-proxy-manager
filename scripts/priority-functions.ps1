@@ -29,7 +29,20 @@ function Initialize-ClaudePriority {
     # Detect Antigravity accounts
     $antigravityAccounts = @()
     try {
-        $proxyRunning = Test-NetConnection -ComputerName localhost -Port 8081 -InformationLevel Quiet -WarningAction SilentlyContinue
+        # Fast check for proxy port
+        $proxyRunning = $false
+        try {
+            $tcp = New-Object System.Net.Sockets.TcpClient
+            $connect = $tcp.BeginConnect("localhost", 8081, $null, $null)
+            $wait = $connect.AsyncWaitHandle.WaitOne(100, $false)
+            if ($tcp.Connected) {
+                $tcp.EndConnect($connect)
+                $tcp.Close()
+                $proxyRunning = $true
+            }
+            $tcp.Dispose()
+        } catch {}
+
         if ($proxyRunning) {
             $response = Invoke-RestMethod -Uri "http://localhost:8081/account-limits?format=json" -ErrorAction Stop
             foreach ($account in $response.accounts) {
