@@ -23,14 +23,19 @@ if (-not $NoSymlinks) {
     if (-not $freeExists -or -not $paidExists) {
         Write-Host "Creating symlinks (requires admin)..." -ForegroundColor Yellow
 
+        # Escape single quotes for safe interpolation in the elevated script
+        $safeFreeDir = $freeDir -replace "'", "''"
+        $safePaidDir = $paidDir -replace "'", "''"
+        $safeTargetDir = $WorkingDirectory -replace "'", "''"
+
         # Create elevated script to make symlinks
         $elevatedScript = @"
-if (-not (Test-Path '$freeDir')) {
-    New-Item -ItemType SymbolicLink -Path '$freeDir' -Target '$WorkingDirectory' | Out-Null
+if (-not (Test-Path '$safeFreeDir')) {
+    New-Item -ItemType SymbolicLink -Path '$safeFreeDir' -Target '$safeTargetDir' | Out-Null
     Write-Host '[OK] FREE symlink created' -ForegroundColor Green
 }
-if (-not (Test-Path '$paidDir')) {
-    New-Item -ItemType SymbolicLink -Path '$paidDir' -Target '$WorkingDirectory' | Out-Null
+if (-not (Test-Path '$safePaidDir')) {
+    New-Item -ItemType SymbolicLink -Path '$safePaidDir' -Target '$safeTargetDir' | Out-Null
     Write-Host '[OK] PAID symlink created' -ForegroundColor Green
 }
 Write-Host ''
