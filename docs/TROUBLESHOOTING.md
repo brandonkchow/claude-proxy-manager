@@ -16,26 +16,6 @@ claude-help        # Ensure commands are loaded
 
 ### Mode Switching Issues
 
-#### "Thinking blocks" causing API errors
-
-**Problem:** Switched modes mid-conversation and getting 400 errors
-
-**Cause:** Antigravity proxy cannot process "thinking blocks" from Claude's thinking models (`-thinking` suffix)
-
-**Solution:**
-```powershell
-# 1. Exit current conversation
-# In Claude CLI, type: /exit
-
-# 2. Switch modes
-claude-free  # or claude-paid
-
-# 3. Start fresh conversation
-claude "Hello!"
-```
-
-**Prevention:** Always exit conversations before switching modes!
-
 #### Mode switch doesn't take effect
 
 **Problem:** Ran `claude-free` but still using paid mode
@@ -385,17 +365,6 @@ claude-free  # Don't run ". $PROFILE" in the mode switch script
 ```powershell
 # Run as Administrator
 Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
-```
-
-### "Cannot process 'thinking blocks'"
-
-**Context:** Using Antigravity proxy with thinking models
-
-**Solution:** Exit conversation, stay in same mode, and start fresh conversation
-
-Or switch to paid mode:
-```powershell
-claude-paid
 ```
 
 ### "Port 8081 already in use"

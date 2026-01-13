@@ -340,19 +340,6 @@ Edit settings.json manually:
 
 ## Limitations
 
-### Thinking Models
-
-Antigravity proxy cannot process "thinking blocks" from Claude's thinking models.
-
-**Affected models:**
-- `claude-sonnet-4-5-thinking`
-- Any model with `-thinking` suffix
-
-**Workaround:**
-- Exit conversation before switching modes
-- Use PAID mode for thinking models
-- Or start fresh conversation in same mode
-
 ### Windows-Only
 
 Currently Windows-only due to:
