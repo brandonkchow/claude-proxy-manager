@@ -29,6 +29,7 @@ $backupPath = "$env:USERPROFILE\.claude\settings.backup.json"
 if (Test-Path $settingsPath) {
     Write-Host "[INFO] Backing up settings..." -ForegroundColor Gray
     Copy-Item $settingsPath $backupPath -Force
+    Write-Host "       Backup saved to: $backupPath" -ForegroundColor DarkGray
 }
 
 if ($Mode -eq 'paid') {
@@ -78,9 +79,12 @@ if ($Mode -eq 'paid') {
             $accountsResponse = Invoke-WebRequest -Uri "http://localhost:8081/account-limits?format=json" -UseBasicParsing -TimeoutSec 2 -ErrorAction SilentlyContinue
             if ($accountsResponse) {
                 $accountsData = $accountsResponse.Content | ConvertFrom-Json
-                $emails = $accountsData.accounts.email -join ", "
-                if ($emails) {
-                    Write-Host "   Accounts: $emails" -ForegroundColor Gray
+                $accounts = $accountsData.accounts
+                if ($accounts) {
+                    Write-Host "   Connected Accounts:" -ForegroundColor Gray
+                    foreach ($acc in $accounts) {
+                        Write-Host "    • $($acc.email)" -ForegroundColor White
+                    }
                 } else {
                      Write-Host "   Accounts: (None detected)" -ForegroundColor Gray
                 }
@@ -90,7 +94,8 @@ if ($Mode -eq 'paid') {
         }
     } catch {
         Write-Host "[WARN] Proxy server is NOT running!" -ForegroundColor Yellow
-        Write-Host "       Start it with: `$env:PORT = '8081'; antigravity-claude-proxy start" -ForegroundColor Gray
+        Write-Host "       Start it with: start-proxy" -ForegroundColor Cyan
+        Write-Host "       (or set `$env:PORT='8081' and run 'antigravity-claude-proxy start')" -ForegroundColor DarkGray
     }
     
     Write-Host "[OK] Switched to FREE mode" -ForegroundColor Green
