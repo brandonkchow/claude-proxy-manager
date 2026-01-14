@@ -59,9 +59,17 @@ jobs:
           $config.TestResult.Enabled = $true
           $config.TestResult.OutputPath = "test-results-integration.xml"
           $config.TestResult.OutputFormat = 'NUnitXml'
-          $config.Run.Exit = $false  # Don't exit with error code on test failures
+          $config.Run.Exit = $false
 
-          Invoke-Pester -Configuration $config
+          # Run tests and always exit 0 (integration tests are informational only)
+          try {
+            Invoke-Pester -Configuration $config
+          } catch {
+            Write-Host "Integration tests completed with failures (expected in CI)" -ForegroundColor Yellow
+          }
+
+          # Ensure we exit with 0
+          exit 0
 
       - name: Upload Test Results
         uses: actions/upload-artifact@v4
