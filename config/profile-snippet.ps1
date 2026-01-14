@@ -1,6 +1,9 @@
 # Claude Proxy Manager - Enhanced PowerShell Profile Functions
-# Source the priority functions
-. "$env:USERPROFILE\.claude\claude-proxy-manager\scripts\priority-functions.ps1"
+# Source the priority functions if they exist
+$priorityFunctionsPath = "$env:USERPROFILE\.claude\claude-proxy-manager\scripts\priority-functions.ps1"
+if (Test-Path $priorityFunctionsPath) {
+    . $priorityFunctionsPath
+}
 
 # Helper: Cross-platform port check (Test-NetConnection is Windows-only and slow)
 function Test-PortOpen {

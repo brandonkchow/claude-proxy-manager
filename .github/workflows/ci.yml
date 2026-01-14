@@ -144,7 +144,8 @@ jobs:
           }
 
           if ($errors.Count -gt 0) {
-            Write-Error "JSON validation failed for $($errors.Count) file(s)"
+            $count = $errors.Count
+            Write-Error "JSON validation failed for $count file(s)"
             exit 1
           }
 

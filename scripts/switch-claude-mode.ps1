@@ -85,13 +85,12 @@ if ($Mode -eq 'paid') {
     # Configure proxy settings
     $settings.env = @{
         ANTHROPIC_AUTH_TOKEN = "test"
-            ANTHROPIC_BASE_URL = "http://localhost:8081"
-            ANTHROPIC_MODEL = "claude-sonnet-4-5"
-            ANTHROPIC_DEFAULT_OPUS_MODEL = "claude-opus-4-5"
-            ANTHROPIC_DEFAULT_SONNET_MODEL = "claude-sonnet-4-5"
-            ANTHROPIC_DEFAULT_HAIKU_MODEL = "gemini-3-flash"
-            CLAUDE_CODE_SUBAGENT_MODEL = "claude-sonnet-4-5"
-        }
+        ANTHROPIC_BASE_URL = "http://localhost:8081"
+        ANTHROPIC_MODEL = "claude-sonnet-4-5"
+        ANTHROPIC_DEFAULT_OPUS_MODEL = "claude-opus-4-5"
+        ANTHROPIC_DEFAULT_SONNET_MODEL = "claude-sonnet-4-5"
+        ANTHROPIC_DEFAULT_HAIKU_MODEL = "gemini-3-flash"
+        CLAUDE_CODE_SUBAGENT_MODEL = "claude-sonnet-4-5"
     }
     
     # Set proxy environment variables for this session

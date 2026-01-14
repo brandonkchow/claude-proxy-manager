@@ -131,7 +131,8 @@ Describe "Help System Coverage" {
 
     Context "When verifying help coverage" {
         It "Should have help text for all public functions" {
-            Mock Write-Host {} -ParameterFilter { $Object -match "━" }
+            # Mock Write-Host to suppress decorative output
+            Mock Write-Host {}
 
             $script:PublicFunctions | ForEach-Object {
                 $functionName = $_
