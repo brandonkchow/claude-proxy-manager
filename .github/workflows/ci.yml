@@ -1,0 +1,279 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop, feature/* ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Pester
+        shell: powershell
+        run: |
+          Install-Module -Name Pester -Force -SkipPublisherCheck -MinimumVersion 5.0.0
+          Import-Module Pester
+
+      - name: Display Pester version
+        shell: powershell
+        run: |
+          Get-Module -Name Pester -ListAvailable
+
+      - name: Run Unit Tests
+        shell: powershell
+        run: |
+          $config = New-PesterConfiguration
+          $config.Run.Path = ".\tests\Unit"
+          $config.Output.Verbosity = 'Detailed'
+          $config.TestResult.Enabled = $true
+          $config.TestResult.OutputPath = "test-results-unit.xml"
+          $config.TestResult.OutputFormat = 'NUnitXml'
+          $config.CodeCoverage.Enabled = $true
+          $config.CodeCoverage.Path = @(
+            ".\scripts\*.ps1",
+            ".\config\*.ps1"
+          )
+          $config.CodeCoverage.OutputPath = "coverage-unit.xml"
+
+          Invoke-Pester -Configuration $config
+
+      - name: Run Integration Tests
+        shell: powershell
+        run: |
+          $config = New-PesterConfiguration
+          $config.Run.Path = ".\tests\Integration"
+          $config.Output.Verbosity = 'Detailed'
+          $config.TestResult.Enabled = $true
+          $config.TestResult.OutputPath = "test-results-integration.xml"
+          $config.TestResult.OutputFormat = 'NUnitXml'
+
+          Invoke-Pester -Configuration $config
+
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: |
+            test-results-*.xml
+            coverage-*.xml
+
+      - name: Publish Test Report
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Pester Tests
+          path: 'test-results-*.xml'
+          reporter: java-junit
+          fail-on-error: true
+
+  lint:
+    name: PowerShell Script Analyzer
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install PSScriptAnalyzer
+        shell: powershell
+        run: |
+          Install-Module -Name PSScriptAnalyzer -Force -SkipPublisherCheck
+
+      - name: Run PSScriptAnalyzer
+        shell: powershell
+        run: |
+          $results = Invoke-ScriptAnalyzer -Path . -Recurse -ReportSummary -Settings PSGallery
+          $results | Format-Table -AutoSize
+
+          # Fail if there are errors or warnings
+          if ($results | Where-Object { $_.Severity -eq 'Error' }) {
+            Write-Error "Script analysis found errors"
+            exit 1
+          }
+
+          if ($results | Where-Object { $_.Severity -eq 'Warning' }) {
+            Write-Warning "Script analysis found warnings"
+            # Uncomment to fail on warnings:
+            # exit 1
+          }
+
+      - name: Upload Analysis Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: analysis-results
+          path: analysis-*.xml
+
+  validate-json:
+    name: Validate JSON Files
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate JSON syntax
+        shell: powershell
+        run: |
+          $jsonFiles = Get-ChildItem -Path . -Filter *.json -Recurse -Exclude node_modules
+          $errors = @()
+
+          foreach ($file in $jsonFiles) {
+            try {
+              $content = Get-Content $file.FullName -Raw
+              $null = ConvertFrom-Json $content -ErrorAction Stop
+              Write-Host "✓ $($file.FullName)" -ForegroundColor Green
+            } catch {
+              Write-Host "✗ $($file.FullName): $_" -ForegroundColor Red
+              $errors += $file.FullName
+            }
+          }
+
+          if ($errors.Count -gt 0) {
+            Write-Error "JSON validation failed for $($errors.Count) file(s)"
+            exit 1
+          }
+
+  validate-docs:
+    name: Validate Documentation
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for required documentation
+        shell: powershell
+        run: |
+          $requiredDocs = @(
+            'README.md',
+            'CLAUDE.md',
+            'docs/QUICK_REFERENCE.md',
+            'docs/USAGE.md',
+            'docs/TROUBLESHOOTING.md',
+            'docs/REMOTE_ACCESS.md',
+            'docs/ARCHITECTURE.md',
+            'docs/SETUP.md'
+          )
+
+          $missing = @()
+          foreach ($doc in $requiredDocs) {
+            if (-not (Test-Path $doc)) {
+              $missing += $doc
+              Write-Host "✗ Missing: $doc" -ForegroundColor Red
+            } else {
+              Write-Host "✓ Found: $doc" -ForegroundColor Green
+            }
+          }
+
+          if ($missing.Count -gt 0) {
+            Write-Error "Missing documentation files: $($missing -join ', ')"
+            exit 1
+          }
+
+      - name: Check documentation links
+        shell: powershell
+        run: |
+          # Basic link validation in README
+          $readme = Get-Content README.md -Raw
+
+          # Check for broken relative links
+          $relativeLinks = [regex]::Matches($readme, '\[.*?\]\((docs/[^\)]+)\)')
+          $brokenLinks = @()
+
+          foreach ($match in $relativeLinks) {
+            $link = $match.Groups[1].Value
+            if (-not (Test-Path $link)) {
+              $brokenLinks += $link
+              Write-Host "✗ Broken link: $link" -ForegroundColor Red
+            }
+          }
+
+          if ($brokenLinks.Count -gt 0) {
+            Write-Warning "Found $($brokenLinks.Count) broken link(s) in README.md"
+            # Uncomment to fail on broken links:
+            # exit 1
+          }
+
+  integration-check:
+    name: Integration Check
+    runs-on: windows-latest
+    needs: [test, lint, validate-json, validate-docs]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Verify profile snippet syntax
+        shell: powershell
+        run: |
+          $snippet = ".\config\profile-snippet.ps1"
+
+          # Check syntax
+          $errors = $null
+          $null = [System.Management.Automation.PSParser]::Tokenize(
+            (Get-Content $snippet -Raw),
+            [ref]$errors
+          )
+
+          if ($errors.Count -gt 0) {
+            Write-Error "Syntax errors in profile snippet:"
+            $errors | ForEach-Object { Write-Error $_ }
+            exit 1
+          }
+
+          Write-Host "✓ Profile snippet syntax is valid" -ForegroundColor Green
+
+      - name: Verify switch-claude-mode syntax
+        shell: powershell
+        run: |
+          $script = ".\scripts\switch-claude-mode.ps1"
+
+          # Check syntax
+          $errors = $null
+          $null = [System.Management.Automation.PSParser]::Tokenize(
+            (Get-Content $script -Raw),
+            [ref]$errors
+          )
+
+          if ($errors.Count -gt 0) {
+            Write-Error "Syntax errors in switch-claude-mode.ps1:"
+            $errors | ForEach-Object { Write-Error $_ }
+            exit 1
+          }
+
+          Write-Host "✓ switch-claude-mode.ps1 syntax is valid" -ForegroundColor Green
+
+      - name: Summary
+        shell: powershell
+        run: |
+          Write-Host ""
+          Write-Host "========================================" -ForegroundColor Cyan
+          Write-Host "  CI/CD Pipeline Completed Successfully" -ForegroundColor Green
+          Write-Host "========================================" -ForegroundColor Cyan
+          Write-Host ""
+          Write-Host "✓ All tests passed" -ForegroundColor Green
+          Write-Host "✓ Code analysis passed" -ForegroundColor Green
+          Write-Host "✓ JSON validation passed" -ForegroundColor Green
+          Write-Host "✓ Documentation validated" -ForegroundColor Green
+          Write-Host "✓ Integration checks passed" -ForegroundColor Green
+          Write-Host ""

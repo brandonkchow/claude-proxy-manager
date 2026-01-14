@@ -35,9 +35,12 @@ Claude Proxy Manager is a Windows PowerShell-based tool that enables seamless sw
    - `CLAUDE.md` - Update architecture notes and testing checklist
 
 3. **Testing**:
-   - Add test cases to Testing Checklist section
-   - Create manual test script in repo root (test-*.ps1)
+   - Add Pester test cases to `tests/Unit/` or `tests/Integration/`
+   - Run tests: `.\Run-Tests.ps1`
+   - Ensure CI passes: All tests must pass in GitHub Actions
+   - Add test cases to Testing Checklist section below
    - Document edge cases in TROUBLESHOOTING.md
+   - See `docs/TESTING.md` for comprehensive testing guide
 
 4. **Examples**:
    - Create example usage in `docs/USAGE.md`
@@ -46,14 +49,17 @@ Claude Proxy Manager is a Windows PowerShell-based tool that enables seamless sw
 **Example Workflow:**
 ```
 1. Implement feature in profile-snippet.ps1
-2. Add Show-ClaudeHelp case for new command
-3. Update QUICK_REFERENCE.md command table
-4. Add usage examples to USAGE.md
-5. Add troubleshooting section to TROUBLESHOOTING.md
-6. Update README.md features list
-7. Test: claude-help <command>
-8. Test: Actual command execution
-9. Commit with message: "Feat: <feature> + docs"
+2. Write Pester tests in tests/Unit/ or tests/Integration/
+3. Run tests: .\Run-Tests.ps1
+4. Add Show-ClaudeHelp case for new command
+5. Update QUICK_REFERENCE.md command table
+6. Add usage examples to USAGE.md
+7. Add troubleshooting section to TROUBLESHOOTING.md
+8. Update README.md features list
+9. Test: claude-help <command>
+10. Test: Actual command execution
+11. Ensure CI/CD passes (GitHub Actions)
+12. Commit with message: "feat: <feature> + tests + docs"
 ```
 
 ## Critical Architecture Concepts
@@ -165,13 +171,34 @@ claude-proxy-manager/
 ├── scripts/
 │   ├── install.ps1              # Main installer with UAC elevation
 │   ├── switch-claude-mode.ps1   # Mode switching logic
-│   └── priority-functions.ps1   # Priority management functions
+│   ├── priority-functions.ps1   # Priority management functions
+│   └── daemon-startup.ps1       # Daemon auto-start script
 ├── config/
 │   ├── settings.example.json    # Example Claude settings (FREE mode)
 │   ├── priority.example.json    # Example priority configuration
+│   ├── daemon-config.json       # Daemon configuration
 │   └── profile-snippet.ps1      # PowerShell profile functions
-└── docs/
-    └── REMOTE_ACCESS.md         # SSH, psmux, HappyCoder setup
+├── tests/
+│   ├── Unit/                    # Unit tests (Pester)
+│   │   ├── ModeSwitching.Tests.ps1
+│   │   ├── PriorityFunctions.Tests.ps1
+│   │   └── DaemonFunctions.Tests.ps1
+│   └── Integration/             # Integration tests (Pester)
+│       ├── DualSessions.Tests.ps1
+│       ├── HelpSystem.Tests.ps1
+│       └── UpdateChecker.Tests.ps1
+├── .github/
+│   └── workflows/
+│       └── ci.yml               # GitHub Actions CI/CD
+├── docs/
+│   ├── QUICK_REFERENCE.md       # Command cheat sheet
+│   ├── USAGE.md                 # Usage guide
+│   ├── TROUBLESHOOTING.md       # Common issues
+│   ├── REMOTE_ACCESS.md         # SSH, psmux, HappyCoder setup
+│   ├── ARCHITECTURE.md          # Technical architecture
+│   ├── SETUP.md                 # Installation guide
+│   └── TESTING.md               # Testing guide (NEW)
+└── Run-Tests.ps1                # Test runner script (NEW)
 ```
 
 **User Files** (created during installation, in .gitignore):
@@ -316,21 +343,79 @@ dual-sessions               # Standard (foreground, non-persistent)
 - Antigravity proxy must start before daemon (for FREE mode)
 - daemon-startup.ps1 handles dependency ordering
 
-## Testing Checklist
+## Testing
+
+### Automated Testing (Pester)
+
+The project uses **Pester 5.x** for automated testing. See `docs/TESTING.md` for comprehensive guide.
+
+**Quick Start:**
+```powershell
+# Run all tests
+.\Run-Tests.ps1
+
+# Run with code coverage
+.\Run-Tests.ps1 -Coverage
+
+# Run specific test suite
+.\Run-Tests.ps1 -TestType Unit
+.\Run-Tests.ps1 -TestType Integration
+```
+
+**Test Structure:**
+- `tests/Unit/` - Unit tests for individual functions
+- `tests/Integration/` - Integration tests for workflows
+- GitHub Actions runs all tests on push/PR
+
+**Coverage:**
+- **Unit Tests**: ModeSwitching, PriorityFunctions, DaemonFunctions
+- **Integration Tests**: DualSessions, HelpSystem, UpdateChecker
+
+### Manual Testing Checklist
 
 When modifying core functionality:
 
-1. Test mode switching preserves existing settings backup
-2. Verify priority.json format after Initialize-ClaudePriority
-3. Check profile snippet doesn't duplicate on reinstall
-4. Ensure proxy health checks handle timeout gracefully
-5. Test with and without proxy running
-6. Test with and without Claude Code authentication
-7. Verify UAC elevation scripts clean up temp files
-8. Test non-interactive mode for CI/CD scenarios
-9. **Test daemon persistence**: Start daemon, close terminals, verify sessions reconnect
-10. **Test daemon auto-start**: Reboot PC, verify daemon running after login
-11. **Test daemon restart**: Restart daemon, verify sessions survive
+1. **Mode Switching**:
+   - ✅ Test mode switching preserves existing settings backup
+   - ✅ Verify environment variables cleared/set correctly
+   - ✅ Check settings.json structure after switch
+
+2. **Priority Management**:
+   - ✅ Verify priority.json format after Initialize-ClaudePriority
+   - ✅ Test priority ordering and enable/disable
+
+3. **Installation**:
+   - ✅ Check profile snippet doesn't duplicate on reinstall
+   - ✅ Verify UAC elevation scripts clean up temp files
+   - ✅ Test non-interactive mode for CI/CD scenarios
+
+4. **Proxy Integration**:
+   - ✅ Ensure proxy health checks handle timeout gracefully
+   - ✅ Test with and without proxy running
+   - ✅ Test with and without Claude Code authentication
+
+5. **Daemon Management**:
+   - ✅ **Test daemon persistence**: Start daemon, close terminals, verify sessions reconnect
+   - ✅ **Test daemon auto-start**: Reboot PC, verify daemon running after login
+   - ✅ **Test daemon restart**: Restart daemon, verify sessions survive
+
+6. **CI/CD**:
+   - ✅ All Pester tests pass
+   - ✅ PSScriptAnalyzer passes
+   - ✅ JSON validation passes
+   - ✅ Documentation links valid
+
+### Running Tests Before Commit
+
+**ALWAYS run tests before committing:**
+```powershell
+# Quick test run
+.\Run-Tests.ps1
+
+# Full CI simulation
+.\Run-Tests.ps1 -CI -Coverage
+Invoke-ScriptAnalyzer -Path . -Recurse -Settings PSGallery
+```
 
 ## Common Pitfalls
 

@@ -5,6 +5,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Platform: Windows](https://img.shields.io/badge/Platform-Windows-blue.svg)](https://www.microsoft.com/windows)
 [![PowerShell](https://img.shields.io/badge/PowerShell-5.1%2B-blue.svg)](https://docs.microsoft.com/powershell/)
+[![CI/CD](https://github.com/brandonkchow/claude-proxy-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/brandonkchow/claude-proxy-manager/actions/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/Tests-Pester%205.x-brightgreen.svg)](docs/TESTING.md)
 
 ## 🚀 Quick Start
 
@@ -72,6 +74,7 @@ Claude Proxy Manager lets you:
 - [Troubleshooting](docs/TROUBLESHOOTING.md) - Common issues and solutions
 - [Remote Access](docs/REMOTE_ACCESS.md) - SSH, tmux, Happy Coder
 - [Architecture](docs/ARCHITECTURE.md) - How it works under the hood
+- [Testing Guide](docs/TESTING.md) - Automated testing with Pester
 
 **Built-in help:** Run `claude-help` anytime in PowerShell!
 
