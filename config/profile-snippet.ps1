@@ -1081,11 +1081,14 @@ if (Test-Path $daemonConfigPath) {
     }
 }
 
-# Load update checker
-. "$env:USERPROFILE\.claude\claude-proxy-manager\config\update-checker.ps1"
+# Load update checker if it exists
+$updateCheckerPath = "$env:USERPROFILE\.claude\claude-proxy-manager\config\update-checker.ps1"
+if (Test-Path $updateCheckerPath) {
+    . $updateCheckerPath
 
-# Check for antigravity-claude-proxy updates (cached for 24 hours)
-Check-AntigravityUpdate
+    # Check for antigravity-claude-proxy updates (cached for 24 hours)
+    Check-AntigravityUpdate
+}
 
 # Show current mode on profile load
 Get-ClaudeMode
