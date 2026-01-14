@@ -86,7 +86,7 @@ jobs:
         with:
           name: Pester Tests
           path: 'test-results-unit.xml'
-          reporter: java-junit
+          reporter: dotnet-nunit
           fail-on-error: true  # Unit tests must pass
 
   lint:
