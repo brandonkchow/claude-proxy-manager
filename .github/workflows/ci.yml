@@ -51,7 +51,6 @@ jobs:
           Invoke-Pester -Configuration $config
 
       - name: Run Integration Tests
-        continue-on-error: true  # Integration tests may fail in CI environment
         shell: powershell
         run: |
           $config = New-PesterConfiguration
@@ -60,6 +59,7 @@ jobs:
           $config.TestResult.Enabled = $true
           $config.TestResult.OutputPath = "test-results-integration.xml"
           $config.TestResult.OutputFormat = 'NUnitXml'
+          $config.Run.Exit = $false  # Don't exit with error code on test failures
 
           Invoke-Pester -Configuration $config
 
