@@ -257,7 +257,7 @@ pause
             
             # Save to temp file
             $tempScript = "$env:TEMP\install-openssh.ps1"
-            $elevatedScript | Set-Content $tempScript
+            $elevatedScript | Set-Content $tempScript -Encoding UTF8
             
             # Run with elevation
             try {
@@ -288,7 +288,7 @@ Write-Host 'OpenSSH Server installed successfully!' -ForegroundColor Green
 pause
 "@
         $tempScript = "$env:TEMP\install-openssh.ps1"
-        $elevatedScript | Set-Content $tempScript
+        $elevatedScript | Set-Content $tempScript -Encoding UTF8
         
         try {
             Start-Process powershell -ArgumentList "-ExecutionPolicy Bypass -File `"$tempScript`"" -Verb RunAs -Wait
@@ -344,7 +344,7 @@ Write-Host 'Chocolatey and psmux installed successfully!' -ForegroundColor Green
 pause
 "@
             $tempScript = "$env:TEMP\install-choco-psmux.ps1"
-            $chocoInstallScript | Set-Content $tempScript
+            $chocoInstallScript | Set-Content $tempScript -Encoding UTF8
             
             try {
                 Start-Process powershell -ArgumentList "-ExecutionPolicy Bypass -File `"$tempScript`"" -Verb RunAs -Wait
