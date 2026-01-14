@@ -136,9 +136,9 @@ jobs:
             try {
               $content = Get-Content $file.FullName -Raw
               $null = ConvertFrom-Json $content -ErrorAction Stop
-              Write-Host "✓ $($file.FullName)" -ForegroundColor Green
+              Write-Host "[OK] $($file.FullName)" -ForegroundColor Green
             } catch {
-              Write-Host "✗ $($file.FullName): $_" -ForegroundColor Red
+              Write-Host "[X] $($file.FullName): $_" -ForegroundColor Red
               $errors += $file.FullName
             }
           }
@@ -175,9 +175,9 @@ jobs:
           foreach ($doc in $requiredDocs) {
             if (-not (Test-Path $doc)) {
               $missing += $doc
-              Write-Host "✗ Missing: $doc" -ForegroundColor Red
+              Write-Host "[X] Missing: $doc" -ForegroundColor Red
             } else {
-              Write-Host "✓ Found: $doc" -ForegroundColor Green
+              Write-Host "[OK] Found: $doc" -ForegroundColor Green
             }
           }
 
@@ -201,7 +201,7 @@ jobs:
             $link = $match.Groups[1].Value
             if (-not (Test-Path $link)) {
               $brokenLinks += $link
-              Write-Host "✗ Broken link: $link" -ForegroundColor Red
+              Write-Host "[X] Broken link: $link" -ForegroundColor Red
             }
           }
 
@@ -243,7 +243,7 @@ jobs:
             exit 1
           }
 
-          Write-Host "✓ Profile snippet syntax is valid" -ForegroundColor Green
+          Write-Host "[OK] Profile snippet syntax is valid" -ForegroundColor Green
 
       - name: Verify switch-claude-mode syntax
         shell: powershell
@@ -263,7 +263,7 @@ jobs:
             exit 1
           }
 
-          Write-Host "✓ switch-claude-mode.ps1 syntax is valid" -ForegroundColor Green
+          Write-Host "[OK] switch-claude-mode.ps1 syntax is valid" -ForegroundColor Green
 
       - name: Summary
         shell: powershell
@@ -273,9 +273,9 @@ jobs:
           Write-Host "  CI/CD Pipeline Completed Successfully" -ForegroundColor Green
           Write-Host "========================================" -ForegroundColor Cyan
           Write-Host ""
-          Write-Host "✓ All tests passed" -ForegroundColor Green
-          Write-Host "✓ Code analysis passed" -ForegroundColor Green
-          Write-Host "✓ JSON validation passed" -ForegroundColor Green
-          Write-Host "✓ Documentation validated" -ForegroundColor Green
-          Write-Host "✓ Integration checks passed" -ForegroundColor Green
+          Write-Host "[OK] All tests passed" -ForegroundColor Green
+          Write-Host "[OK] Code analysis passed" -ForegroundColor Green
+          Write-Host "[OK] JSON validation passed" -ForegroundColor Green
+          Write-Host "[OK] Documentation validated" -ForegroundColor Green
+          Write-Host "[OK] Integration checks passed" -ForegroundColor Green
           Write-Host ""
