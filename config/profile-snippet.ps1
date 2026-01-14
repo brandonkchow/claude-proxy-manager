@@ -43,6 +43,7 @@ function Start-AntigravityProxy {
     param()
     Write-Host "Starting Antigravity proxy..." -ForegroundColor Cyan
     $env:PORT = '8081'
+    $env:HOST = '127.0.0.1' # Defense in depth: restrict to localhost if supported
     antigravity-claude-proxy start
 }
 
@@ -377,6 +378,7 @@ function Start-HappyFree {
         Write-Host "Starting Antigravity Proxy in background..." -ForegroundColor Yellow
         Start-Job -ScriptBlock {
             $env:PORT = '8081'
+            $env:HOST = '127.0.0.1' # Defense in depth
             antigravity-claude-proxy start
         } | Out-Null
 
@@ -490,6 +492,7 @@ function Start-DualSessions {
         Write-Host "  Starting proxy in background..." -ForegroundColor Yellow
         Start-Job -ScriptBlock {
             $env:PORT = '8081'
+            $env:HOST = '127.0.0.1' # Defense in depth
             antigravity-claude-proxy start
         } | Out-Null
 
