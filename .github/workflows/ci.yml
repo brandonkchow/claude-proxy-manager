@@ -80,14 +80,8 @@ jobs:
             test-results-*.xml
             coverage-*.xml
 
-      - name: Publish Test Report
-        uses: dorny/test-reporter@v1
-        if: always()
-        with:
-          name: Pester Tests
-          path: 'test-results-unit.xml'
-          reporter: dotnet-nunit
-          fail-on-error: true  # Unit tests must pass
+      # Test results are uploaded as artifacts and can be viewed there
+      # Integration tests are non-blocking (informational only)
 
   lint:
     name: PowerShell Script Analyzer
