@@ -331,7 +331,6 @@ Ctrl+B, then:
 ### 1. Use Antigravity-First Priority
 
 For remote workflows, Antigravity-first is recommended:
-- Avoids thinking model conversation conflicts
 - Better for resuming sessions
 - No need to switch modes manually
 
@@ -557,20 +556,6 @@ npm install -g happy-coder
 ### Setup with Claude Proxy Manager
 
 HappyCoder works **perfectly** with Claude Proxy Manager! Here's how to set it up:
-
-> [!CAUTION]
-> **Thinking Model Incompatibility Warning**
-> 
-> Do NOT switch between paid Claude Code and Antigravity proxy in the same HappyCoder session. The proxy cannot process "thinking blocks" from Claude's extended thinking models.
-> 
-> **If you need to switch modes**:
-> 1. Exit current conversation: `/exit`
-> 2. Stop HappyCoder (Ctrl+C)
-> 3. Switch mode: `claude-free` or `claude-paid`
-> 4. Restart HappyCoder
-> 5. Scan new QR code
-> 
-> **Best Practice**: Choose one mode and stick with it for the entire session.
 
 #### Switching Modes Remotely (Out of Town)
 

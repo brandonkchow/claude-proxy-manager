@@ -2,6 +2,28 @@
 # Source the priority functions
 . "$env:USERPROFILE\.claude\claude-proxy-manager\scripts\priority-functions.ps1"
 
+# Helper: Cross-platform port check (Test-NetConnection is Windows-only and slow)
+function Test-PortOpen {
+    param([int]$Port)
+    try {
+        $tcp = New-Object System.Net.Sockets.TcpClient
+        $connect = $tcp.BeginConnect("localhost", $Port, $null, $null)
+        # Timeout 200ms
+        $wait = $connect.AsyncWaitHandle.WaitOne(200, $false)
+        if ($tcp.Connected) {
+            $tcp.EndConnect($connect)
+            $tcp.Close()
+            $tcp.Dispose()
+            return $true
+        }
+        $tcp.Close()
+        $tcp.Dispose()
+        return $false
+    } catch {
+        return $false
+    }
+}
+
 # Claude Mode Switching Functions
 function Use-ClaudePaid {
     param()
@@ -440,7 +462,7 @@ function Start-HappyFree {
     Write-Host "Starting HappyCoder with Antigravity proxy..." -ForegroundColor Cyan
 
     # Ensure Proxy is Running
-    $proxyRunning = Test-NetConnection -ComputerName localhost -Port 8081 -InformationLevel Quiet -WarningAction SilentlyContinue
+    $proxyRunning = Test-PortOpen -Port 8081
     if (-not $proxyRunning) {
         Write-Host "Starting Antigravity Proxy in background..." -ForegroundColor Yellow
         Start-Job -ScriptBlock {
@@ -450,12 +472,12 @@ function Start-HappyFree {
 
         # Wait for proxy to be ready
         Write-Host "Waiting for proxy to start..." -ForegroundColor Yellow
-        $maxAttempts = 15
+        $maxAttempts = 30 # Check more frequently (every 0.5s)
         $attempt = 0
         do {
-            Start-Sleep -Seconds 1
+            Start-Sleep -Milliseconds 500
             $attempt++
-            $proxyRunning = Test-NetConnection -ComputerName localhost -Port 8081 -InformationLevel Quiet -WarningAction SilentlyContinue
+            $proxyRunning = Test-PortOpen -Port 8081
             if ($proxyRunning) {
                 Write-Host "Proxy is ready!" -ForegroundColor Green
                 break
@@ -572,7 +594,7 @@ function Start-DualSessions {
 
     # Ensure proxy is running first (for FREE mode)
     Write-Host "  Ensuring Antigravity proxy is running..." -ForegroundColor Cyan
-    $proxyRunning = Test-NetConnection -ComputerName localhost -Port 8081 -InformationLevel Quiet -WarningAction SilentlyContinue
+    $proxyRunning = Test-PortOpen -Port 8081
     if (-not $proxyRunning) {
         Write-Host "  Starting proxy in background..." -ForegroundColor Yellow
         Start-Job -ScriptBlock {
@@ -581,12 +603,12 @@ function Start-DualSessions {
         } | Out-Null
 
         # Wait for proxy
-        $maxAttempts = 15
+        $maxAttempts = 30
         $attempt = 0
         do {
-            Start-Sleep -Seconds 1
+            Start-Sleep -Milliseconds 500
             $attempt++
-            $proxyRunning = Test-NetConnection -ComputerName localhost -Port 8081 -InformationLevel Quiet -WarningAction SilentlyContinue
+            $proxyRunning = Test-PortOpen -Port 8081
             if ($proxyRunning) {
                 Write-Host "  Proxy ready!" -ForegroundColor Green
                 break
@@ -599,9 +621,14 @@ function Start-DualSessions {
     # Open FREE mode window with GREEN theme
     Write-Host "`n  Opening FREE mode window (Antigravity)..." -ForegroundColor Yellow
     $sessionLabel = if ($useSymlinks) { "$baseName-FREE" } else { "$baseName [GREEN]" }
+
+    # Escape single quotes in paths/labels to prevent command injection
+    $safeFreeDir = $freeDir -replace "'", "''"
+    $safeSessionLabel = $sessionLabel -replace "'", "''"
+
     Start-Process powershell -ArgumentList "-NoExit", "-Command", @"
-Set-Location '$freeDir'
-`$Host.UI.RawUI.WindowTitle = 'FREE - $sessionLabel'
+Set-Location '$safeFreeDir'
+`$Host.UI.RawUI.WindowTitle = 'FREE - $safeSessionLabel'
 `$Host.UI.RawUI.BackgroundColor = 'DarkGreen'
 `$Host.UI.RawUI.ForegroundColor = 'White'
 Clear-Host
@@ -627,9 +654,14 @@ happy --claude-env ANTHROPIC_AUTH_TOKEN=test --claude-env ANTHROPIC_BASE_URL=htt
     # Open PAID mode window with BLUE theme
     Write-Host "  Opening PAID mode window (Claude Code)..." -ForegroundColor Yellow
     $sessionLabel = if ($useSymlinks) { "$baseName-PAID" } else { "$baseName [BLUE]" }
+
+    # Escape single quotes in paths/labels to prevent command injection
+    $safePaidDir = $paidDir -replace "'", "''"
+    $safeSessionLabel = $sessionLabel -replace "'", "''"
+
     Start-Process powershell -ArgumentList "-NoExit", "-Command", @"
-Set-Location '$paidDir'
-`$Host.UI.RawUI.WindowTitle = 'PAID - $sessionLabel'
+Set-Location '$safePaidDir'
+`$Host.UI.RawUI.WindowTitle = 'PAID - $safeSessionLabel'
 `$Host.UI.RawUI.BackgroundColor = 'DarkBlue'
 `$Host.UI.RawUI.ForegroundColor = 'White'
 Clear-Host
@@ -967,31 +999,50 @@ if (-not (Test-Path $priorityPath)) {
         # Silently fail - user can run init-priority manually
     }
 } else {
-    # Check if priority.json has Antigravity accounts
-    try {
-        $priorityConfig = Get-Content $priorityPath -Raw | ConvertFrom-Json
-        $hasAntigravity = $priorityConfig.priority | Where-Object { $_.type -eq 'antigravity' }
+    # Check if we should scan for new accounts (limit to once per 24h to improve startup speed)
+    $discoveryCachePath = "$env:USERPROFILE\.claude\.discovery-check-cache"
+    $shouldScan = $true
 
-        if (-not $hasAntigravity) {
-            # Check if proxy is running with accounts
-            try {
-                $proxyRunning = Test-NetConnection -ComputerName localhost -Port 8081 -InformationLevel Quiet -WarningAction SilentlyContinue -ErrorAction SilentlyContinue
-                if ($proxyRunning) {
-                    $limitsResponse = Invoke-WebRequest -Uri "http://localhost:8081/account-limits?format=json" -UseBasicParsing -TimeoutSec 2 -ErrorAction Stop
-                    $limits = $limitsResponse.Content | ConvertFrom-Json
-
-                    if ($limits.accounts -and $limits.accounts.Count -gt 0) {
-                        Write-Host "[INFO] Antigravity accounts detected. Updating priority configuration..." -ForegroundColor Yellow
-                        Initialize-ClaudePriority -DefaultPriority 'antigravity-first' -ErrorAction SilentlyContinue
-                        Write-Host "[OK] Priority configuration updated" -ForegroundColor Green
-                    }
-                }
-            } catch {
-                # Silently fail - proxy might not be running
-            }
+    if (Test-Path $discoveryCachePath) {
+        $lastScan = (Get-Item $discoveryCachePath).LastWriteTime
+        if ((Get-Date) -lt $lastScan.AddHours(24)) {
+            $shouldScan = $false
         }
-    } catch {
-        # Silently fail - invalid priority.json, user can fix manually
+    }
+
+    if ($shouldScan) {
+        # Update cache timestamp
+        if (-not (Test-Path $discoveryCachePath)) {
+            New-Item -Path $discoveryCachePath -ItemType File -Force | Out-Null
+        }
+        (Get-Item $discoveryCachePath).LastWriteTime = Get-Date
+
+        # Check if priority.json has Antigravity accounts
+        try {
+            $priorityConfig = Get-Content $priorityPath -Raw | ConvertFrom-Json
+            $hasAntigravity = $priorityConfig.priority | Where-Object { $_.type -eq 'antigravity' }
+
+            if (-not $hasAntigravity) {
+                # Check if proxy is running with accounts
+                try {
+                    $proxyRunning = Test-PortOpen -Port 8081
+                    if ($proxyRunning) {
+                        $limitsResponse = Invoke-WebRequest -Uri "http://localhost:8081/account-limits?format=json" -UseBasicParsing -TimeoutSec 2 -ErrorAction Stop
+                        $limits = $limitsResponse.Content | ConvertFrom-Json
+
+                        if ($limits.accounts -and $limits.accounts.Count -gt 0) {
+                            Write-Host "[INFO] Antigravity accounts detected. Updating priority configuration..." -ForegroundColor Yellow
+                            Initialize-ClaudePriority -DefaultPriority 'antigravity-first' -ErrorAction SilentlyContinue
+                            Write-Host "[OK] Priority configuration updated" -ForegroundColor Green
+                        }
+                    }
+                } catch {
+                    # Silently fail - proxy might not be running
+                }
+            }
+        } catch {
+            # Silently fail - invalid priority.json, user can fix manually
+        }
     }
 }
 

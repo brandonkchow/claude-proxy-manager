@@ -21,10 +21,16 @@ param(
 # Ensure Pester is installed
 if (-not (Get-Module -Name Pester -ListAvailable | Where-Object { $_.Version -ge '5.0.0' })) {
     Write-Host "Installing Pester 5.x..." -ForegroundColor Yellow
-    Install-Module -Name Pester -Force -SkipPublisherCheck -MinimumVersion 5.0.0
+    try {
+        Install-Module -Name Pester -Force -SkipPublisherCheck -MinimumVersion 5.0.0 -Scope CurrentUser -ErrorAction Stop
+    } catch {
+        Write-Host "Failed to install Pester: $_" -ForegroundColor Red
+        Write-Host "Please install manually: Install-Module -Name Pester -Force -Scope CurrentUser" -ForegroundColor Yellow
+        exit 1
+    }
 }
 
-Import-Module Pester -MinimumVersion 5.0.0
+Import-Module Pester -MinimumVersion 5.0.0 -ErrorAction Stop
 
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Cyan

@@ -158,7 +158,7 @@ $defaultPriority = "claude-first"
 if ($antigravityAccounts.Count -gt 0 -and $hasClaudeAuth) {
     Write-Host "`n  Which account should be used first?" -ForegroundColor White
     Write-Host "    1. Claude Code (paid account) - Recommended for most users" -ForegroundColor White
-    Write-Host "    2. Antigravity (free accounts) - Better for avoiding thinking model conflicts" -ForegroundColor White
+    Write-Host "    2. Antigravity (free accounts) - Prioritize free usage" -ForegroundColor White
     
     if (-not $NonInteractive) {
         $choice = Read-Host "`n  Enter choice (1 or 2)"
