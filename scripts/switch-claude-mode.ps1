@@ -39,12 +39,28 @@ if (Test-Path $SettingsPath) {
     Write-Host "       Backup saved to: $backupPath" -ForegroundColor DarkGray
 }
 
+# Load existing settings if they exist
+$existingSettings = $null
+if (Test-Path $SettingsPath) {
+    try {
+        $existingSettings = Get-Content $SettingsPath -Raw | ConvertFrom-Json
+    } catch {
+        Write-Host "[WARN] Could not parse existing settings, creating new config" -ForegroundColor Yellow
+    }
+}
+
 if ($Mode -eq 'paid') {
     Write-Host "[INFO] Switching to PAID mode (Claude Code account)..." -ForegroundColor Cyan
-    
-    # Remove proxy settings - use default Anthropic API
-    $settings = @{
-        env = @{}
+
+    # Preserve existing settings, only modify env section
+    if ($existingSettings) {
+        $settings = $existingSettings | ConvertTo-Json -Depth 10 | ConvertFrom-Json  # Deep copy
+        $settings.env = @{}
+    } else {
+        # No existing settings - create new
+        $settings = @{
+            env = @{}
+        }
     }
     
     # Clear proxy environment variables for this session
@@ -57,11 +73,18 @@ if ($Mode -eq 'paid') {
     
 } elseif ($Mode -eq 'free') {
     Write-Host "[INFO] Switching to FREE mode (Google accounts via proxy)..." -ForegroundColor Cyan
-    
+
+    # Preserve existing settings, only modify env section
+    if ($existingSettings) {
+        $settings = $existingSettings | ConvertTo-Json -Depth 10 | ConvertFrom-Json  # Deep copy
+    } else {
+        # No existing settings - create new
+        $settings = @{ env = @{} }
+    }
+
     # Configure proxy settings
-    $settings = @{
-        env = @{
-            ANTHROPIC_AUTH_TOKEN = "test"
+    $settings.env = @{
+        ANTHROPIC_AUTH_TOKEN = "test"
             ANTHROPIC_BASE_URL = "http://localhost:8081"
             ANTHROPIC_MODEL = "claude-sonnet-4-5"
             ANTHROPIC_DEFAULT_OPUS_MODEL = "claude-opus-4-5"
