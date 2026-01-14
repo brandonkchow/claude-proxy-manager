@@ -19,16 +19,23 @@
 param(
     [Parameter(Mandatory=$true)]
     [ValidateSet('paid', 'free')]
-    [string]$Mode
+    [string]$Mode,
+
+    [Parameter(Mandatory=$false)]
+    [string]$SettingsPath = "$env:USERPROFILE\.claude\settings.json"
 )
 
-$settingsPath = "$env:USERPROFILE\.claude\settings.json"
+# Ensure settings directory exists
+$settingsDir = Split-Path -Parent $SettingsPath
+if (-not (Test-Path $settingsDir)) {
+    New-Item -ItemType Directory -Path $settingsDir -Force | Out-Null
+}
 
 # Backup current settings
-$backupPath = "$env:USERPROFILE\.claude\settings.backup.json"
-if (Test-Path $settingsPath) {
+$backupPath = "$SettingsPath.backup"
+if (Test-Path $SettingsPath) {
     Write-Host "[INFO] Backing up settings..." -ForegroundColor Gray
-    Copy-Item $settingsPath $backupPath -Force
+    Copy-Item $SettingsPath $backupPath -Force
     Write-Host "       Backup saved to: $backupPath" -ForegroundColor DarkGray
 }
 
@@ -103,7 +110,7 @@ if ($Mode -eq 'paid') {
 }
 
 # Save settings
-$settings | ConvertTo-Json -Depth 10 | Set-Content $settingsPath -Encoding utf8
+$settings | ConvertTo-Json -Depth 10 | Set-Content $SettingsPath -Encoding utf8
 
 Write-Host ""
 Write-Host "[TIP] Restart your terminal or run '. `$PROFILE' to reload environment" -ForegroundColor Yellow

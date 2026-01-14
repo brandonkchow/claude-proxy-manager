@@ -3,6 +3,19 @@
 BeforeAll {
     $script:TestRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
     $script:ProfileSnippet = Join-Path $TestRoot "config\profile-snippet.ps1"
+    $script:PriorityFunctionsPath = Join-Path $TestRoot "scripts\priority-functions.ps1"
+
+    # The profile snippet tries to source priority-functions.ps1
+    # Create the directory if it doesn't exist
+    $priorityDir = Split-Path -Parent $script:PriorityFunctionsPath
+    if (-not (Test-Path $priorityDir)) {
+        New-Item -ItemType Directory -Path $priorityDir -Force | Out-Null
+    }
+
+    # Create a dummy priority-functions.ps1 if it doesn't exist
+    if (-not (Test-Path $script:PriorityFunctionsPath)) {
+        "# Dummy for testing" | Set-Content $script:PriorityFunctionsPath
+    }
 
     # Source profile functions
     . $script:ProfileSnippet
