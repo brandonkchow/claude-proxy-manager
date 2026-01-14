@@ -60,10 +60,10 @@ function Get-ClaudeMode {
             Write-Host "   Mode: FREE (Antigravity Proxy)" -ForegroundColor Green
             Write-Host "   Using: Google accounts" -ForegroundColor Gray
             
-            try {
-                $null = Invoke-WebRequest -Uri "http://localhost:8081/health" -UseBasicParsing -TimeoutSec 2 -ErrorAction Stop
+            # Optimization: Use fast port check (200ms) instead of slow web request (2s timeout)
+            if (Test-PortOpen -Port 8081) {
                 Write-Host "   Proxy: Running" -ForegroundColor Green
-            } catch {
+            } else {
                 Write-Host "   Proxy: Not Running" -ForegroundColor Red
                 Write-Host "   Start with: start-proxy" -ForegroundColor Yellow
             }
