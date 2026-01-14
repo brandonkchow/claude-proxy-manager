@@ -2,13 +2,193 @@
 
 Complete guide for using Claude Proxy Manager remotely via SSH, tmux, and mobile workflows.
 
+## Persistent Sessions with Happy Daemon (NEW!)
+
+**The best way to use HappyCoder** is with persistent sessions that survive terminal restarts and computer reboots!
+
+### What is Happy Daemon?
+
+The happy daemon is a background service that keeps your HappyCoder sessions alive permanently:
+- **Sessions persist** across terminal restarts
+- **Sessions survive** computer reboots
+- **One-time QR code scan** - sessions reconnect automatically
+- **Auto-start on login** - configure during installation
+
+### Quick Start: Persistent Dual Sessions
+
+```powershell
+# Start daemon (one time)
+daemon-start
+
+# Start persistent dual sessions (FREE + PAID)
+dual-sessions -UseDaemon
+```
+
+**What this does:**
+1. Ensures happy daemon is running
+2. Creates two persistent sessions (FREE and PAID modes)
+3. Displays QR codes for one-time scanning
+4. Sessions remain active even after closing terminal windows
+
+**In HappyCoder mobile app:**
+- Sessions appear as `YourProject-FREE` and `YourProject-PAID`
+- Tap to switch between them instantly
+- Sessions reconnect automatically after reboots
+
+### Daemon Management Commands
+
+```powershell
+# Check daemon status
+daemon-status
+
+# Start daemon
+daemon-start
+
+# Stop daemon (sessions persist on relay server!)
+daemon-stop
+
+# Restart daemon (safe - sessions survive)
+daemon-restart
+```
+
+### Auto-Start Configuration
+
+During installation, you can configure what auto-starts on Windows login:
+
+**Option 1: None** - Just daemon (manual session start)
+- Most flexible
+- You control when sessions start
+- Command: `daemon-start` runs at login
+
+**Option 2: Dual** - Both FREE and PAID sessions
+- Best for daily use
+- Both sessions ready immediately after login
+- One QR scan for each, permanent access
+
+**Option 3: Free** - Only Antigravity session
+- Save paid quota
+- Free Google accounts always available
+- Single session mode
+
+**Option 4: Paid** - Only Claude Code session
+- Best performance
+- Paid account session ready
+- Single session mode
+
+**Changing Configuration:**
+Re-run the installer or manually edit `~/.claude/claude-proxy-manager/daemon-config.json`
+
+### How Sessions Persist
+
+**Critical Understanding**: Sessions are stored on the happy-server relay (cloud), not locally.
+
+- **Daemon stops** → Sessions remain active on relay
+- **Computer reboots** → Sessions reconnect when daemon restarts
+- **Terminal closes** → Sessions unaffected (daemon runs in background)
+- **Network drops** → Sessions reconnect automatically
+
+### Daemon vs Standard Mode
+
+**Standard Mode** (without `-UseDaemon`):
+```powershell
+dual-sessions
+```
+- Sessions run in foreground
+- Sessions die when you close the window
+- Must rescan QR codes every time
+
+**Persistent Mode** (with `-UseDaemon`):
+```powershell
+dual-sessions -UseDaemon
+```
+- Sessions run via daemon
+- Sessions survive terminal restarts
+- One-time QR code scan
+
+### Troubleshooting Daemon
+
+**Daemon not starting:**
+```powershell
+# Check if happy-coder is installed
+happy --version
+
+# Install if missing
+npm install -g happy-coder
+
+# Start daemon
+daemon-start
+```
+
+**Sessions disappeared after reboot:**
+```powershell
+# Check daemon status
+daemon-status
+
+# Daemon should auto-start on login
+# If not, check Task Scheduler task: "HappyCoderDaemon"
+Get-ScheduledTask -TaskName "HappyCoderDaemon"
+
+# Manually start if needed
+daemon-start
+```
+
+**After updating happy-coder:**
+```powershell
+# Update the npm package
+npm update -g happy-coder
+
+# Restart daemon (sessions survive!)
+daemon-restart
+```
+
+### Remote Access with Persistent Sessions
+
+**Perfect Setup**: Tailscale + Daemon + Dual Sessions
+
+```bash
+# ONE-TIME SETUP (on Windows machine):
+
+# 1. Enable daemon auto-start (done during installation)
+# 2. Configure for dual sessions
+# 3. Start persistent sessions
+dual-sessions -UseDaemon
+
+# 4. Scan QR codes on mobile (one time only!)
+
+# NOW FOREVER:
+# - Close laptop → Sessions stay alive
+# - Reboot computer → Sessions reconnect
+# - Travel anywhere → Access via mobile
+# - No rescanning needed!
+```
+
+**Session Management Over SSH:**
+```bash
+# SSH into Windows machine
+ssh user@100.x.x.x  # Tailscale IP
+
+# Check daemon status
+daemon-status
+
+# View active sessions (managed by daemon)
+happy daemon status
+
+# Restart daemon if needed (sessions survive)
+daemon-restart
+```
+
+---
+
 ## Quick Start: Dual Sessions (RECOMMENDED)
 
 The easiest way to access Claude on mobile is with the **dual-sessions** command:
 
 ```powershell
-# From your Windows machine (local or via SSH)
+# Standard mode (foreground sessions)
 dual-sessions
+
+# Persistent mode (sessions survive restarts) - RECOMMENDED!
+dual-sessions -UseDaemon
 ```
 
 **What this does:**
@@ -16,6 +196,7 @@ dual-sessions
 2. Opens two PowerShell windows (GREEN for FREE, BLUE for PAID)
 3. Displays QR codes in each window
 4. Sessions appear as distinct entries in HappyCoder mobile app
+5. With `-UseDaemon`: Sessions persist across terminal/computer restarts
 
 **First-time symlink setup:**
 ```powershell
@@ -33,6 +214,8 @@ After first setup, symlinks persist and no admin rights needed!
 - `YourProject-PAID` (Claude Code - paid account)
 
 Simply tap to switch between FREE and PAID modes!
+
+**For best experience**: Use `dual-sessions -UseDaemon` to ensure your sessions stay alive permanently.
 
 ---
 

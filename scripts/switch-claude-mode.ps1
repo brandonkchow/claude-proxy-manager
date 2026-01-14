@@ -19,25 +19,48 @@
 param(
     [Parameter(Mandatory=$true)]
     [ValidateSet('paid', 'free')]
-    [string]$Mode
+    [string]$Mode,
+
+    [Parameter(Mandatory=$false)]
+    [string]$SettingsPath = "$env:USERPROFILE\.claude\settings.json"
 )
 
-$settingsPath = "$env:USERPROFILE\.claude\settings.json"
+# Ensure settings directory exists
+$settingsDir = Split-Path -Parent $SettingsPath
+if (-not (Test-Path $settingsDir)) {
+    New-Item -ItemType Directory -Path $settingsDir -Force | Out-Null
+}
 
 # Backup current settings
-$backupPath = "$env:USERPROFILE\.claude\settings.backup.json"
-if (Test-Path $settingsPath) {
+$backupPath = "$SettingsPath.backup"
+if (Test-Path $SettingsPath) {
     Write-Host "[INFO] Backing up settings..." -ForegroundColor Gray
-    Copy-Item $settingsPath $backupPath -Force
+    Copy-Item $SettingsPath $backupPath -Force
     Write-Host "       Backup saved to: $backupPath" -ForegroundColor DarkGray
+}
+
+# Load existing settings if they exist
+$existingSettings = $null
+if (Test-Path $SettingsPath) {
+    try {
+        $existingSettings = Get-Content $SettingsPath -Raw | ConvertFrom-Json
+    } catch {
+        Write-Host "[WARN] Could not parse existing settings, creating new config" -ForegroundColor Yellow
+    }
 }
 
 if ($Mode -eq 'paid') {
     Write-Host "[INFO] Switching to PAID mode (Claude Code account)..." -ForegroundColor Cyan
-    
-    # Remove proxy settings - use default Anthropic API
-    $settings = @{
-        env = @{}
+
+    # Preserve existing settings, only modify env section
+    if ($existingSettings) {
+        $settings = $existingSettings | ConvertTo-Json -Depth 10 | ConvertFrom-Json  # Deep copy
+        $settings.env = @{}
+    } else {
+        # No existing settings - create new
+        $settings = @{
+            env = @{}
+        }
     }
     
     # Clear proxy environment variables for this session
@@ -50,18 +73,24 @@ if ($Mode -eq 'paid') {
     
 } elseif ($Mode -eq 'free') {
     Write-Host "[INFO] Switching to FREE mode (Google accounts via proxy)..." -ForegroundColor Cyan
-    
+
+    # Preserve existing settings, only modify env section
+    if ($existingSettings) {
+        $settings = $existingSettings | ConvertTo-Json -Depth 10 | ConvertFrom-Json  # Deep copy
+    } else {
+        # No existing settings - create new
+        $settings = @{ env = @{} }
+    }
+
     # Configure proxy settings
-    $settings = @{
-        env = @{
-            ANTHROPIC_AUTH_TOKEN = "test"
-            ANTHROPIC_BASE_URL = "http://localhost:8081"
-            ANTHROPIC_MODEL = "claude-sonnet-4-5"
-            ANTHROPIC_DEFAULT_OPUS_MODEL = "claude-opus-4-5"
-            ANTHROPIC_DEFAULT_SONNET_MODEL = "claude-sonnet-4-5"
-            ANTHROPIC_DEFAULT_HAIKU_MODEL = "gemini-3-flash"
-            CLAUDE_CODE_SUBAGENT_MODEL = "claude-sonnet-4-5"
-        }
+    $settings.env = @{
+        ANTHROPIC_AUTH_TOKEN = "test"
+        ANTHROPIC_BASE_URL = "http://localhost:8081"
+        ANTHROPIC_MODEL = "claude-sonnet-4-5"
+        ANTHROPIC_DEFAULT_OPUS_MODEL = "claude-opus-4-5"
+        ANTHROPIC_DEFAULT_SONNET_MODEL = "claude-sonnet-4-5"
+        ANTHROPIC_DEFAULT_HAIKU_MODEL = "gemini-3-flash"
+        CLAUDE_CODE_SUBAGENT_MODEL = "claude-sonnet-4-5"
     }
     
     # Set proxy environment variables for this session
@@ -103,7 +132,7 @@ if ($Mode -eq 'paid') {
 }
 
 # Save settings
-$settings | ConvertTo-Json -Depth 10 | Set-Content $settingsPath -Encoding utf8
+$settings | ConvertTo-Json -Depth 10 | Set-Content $SettingsPath -Encoding utf8
 
 Write-Host ""
 Write-Host "[TIP] Restart your terminal or run '. `$PROFILE' to reload environment" -ForegroundColor Yellow

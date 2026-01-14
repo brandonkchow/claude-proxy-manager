@@ -51,11 +51,20 @@ build/
 # Test files
 test-results/
 coverage/
+test-results*.xml
+coverage*.xml
+TestResults/
+*.coverage
+
+# Manual test scripts (developer testing - kept locally, not committed)
+test-*.ps1
+demo-*.ps1
+run-dual-sessions-test.ps1
+
+# Dev tools directory (manually managed, not version controlled)
+dev-tools/manual-tests/
+dev-tools/archived-docs/
 
 # Agent Tools
 .agent/
 .gemini/
-
-# Private documentation
-CLAUDE.md
-

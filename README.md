@@ -5,6 +5,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Platform: Windows](https://img.shields.io/badge/Platform-Windows-blue.svg)](https://www.microsoft.com/windows)
 [![PowerShell](https://img.shields.io/badge/PowerShell-5.1%2B-blue.svg)](https://docs.microsoft.com/powershell/)
+[![CI/CD](https://github.com/brandonkchow/claude-proxy-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/brandonkchow/claude-proxy-manager/actions/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/Tests-Pester%205.x-brightgreen.svg)](docs/TESTING.md)
 
 ## 🚀 Quick Start
 
@@ -32,6 +34,7 @@ Claude Proxy Manager lets you:
 ## ✨ Features
 
 - 🔄 **Flexible Priority System** - Configure which accounts to use first
+- 🔁 **Persistent Sessions** - Happy daemon keeps mobile sessions alive forever (survive restarts & reboots)
 - 🤖 **Auto-Start Proxy** - Proxy starts automatically when you need it
 - ⚡ **Auto-Initialize** - Priority config auto-detects accounts on first load
 - 📊 **Unified Usage View** - See all account quotas in one place
@@ -56,6 +59,7 @@ Claude Proxy Manager lets you:
 - [Troubleshooting](docs/TROUBLESHOOTING.md) - Common issues and solutions
 - [Remote Access](docs/REMOTE_ACCESS.md) - SSH, tmux, Happy Coder
 - [Architecture](docs/ARCHITECTURE.md) - How it works under the hood
+- [Testing Guide](docs/TESTING.md) - Automated testing with Pester
 
 **Built-in help:** Run `claude-help` anytime in PowerShell!
 
@@ -84,10 +88,17 @@ start-proxy
 # Configure priority order
 set-priority
 
+# Persistent sessions (daemon commands)
+daemon-start        # Start happy daemon for persistent sessions
+daemon-stop         # Stop daemon (sessions persist on relay!)
+daemon-status       # Check daemon health and session count
+daemon-restart      # Restart daemon (safe - sessions survive)
+
 # HappyCoder mobile access
-happy-free          # Start HappyCoder with Antigravity
-happy-paid          # Start HappyCoder with Claude Code
-dual-sessions       # Start BOTH sessions for easy mobile switching (RECOMMENDED)
+happy-free                   # Start HappyCoder with Antigravity
+happy-paid                   # Start HappyCoder with Claude Code
+dual-sessions                # Start BOTH sessions for easy mobile switching
+dual-sessions -UseDaemon     # PERSISTENT dual sessions (survive restarts) - RECOMMENDED!
 ```
 
 ### 📱 Dual Sessions for HappyCoder (Mobile Access)
@@ -95,7 +106,10 @@ dual-sessions       # Start BOTH sessions for easy mobile switching (RECOMMENDED
 The `dual-sessions` command is the **best way** to use HappyCoder on mobile:
 
 ```powershell
-# Simply run:
+# RECOMMENDED: Persistent mode (sessions survive restarts!)
+dual-sessions -UseDaemon
+
+# OR: Standard mode (must rescan QR codes after restarts)
 dual-sessions
 ```
 
@@ -106,6 +120,7 @@ dual-sessions
    - 🟢 **Green** = FREE mode (Antigravity)
    - 🔵 **Blue** = PAID mode (Claude Code)
 4. Displays QR codes for both sessions
+5. **With -UseDaemon**: Sessions persist forever - one-time QR scan, permanent access!
 
 **In your HappyCoder mobile app, you'll see:**
 - 🟢 `myproject-FREE` ← Free Antigravity session
@@ -115,15 +130,15 @@ dual-sessions
 - Instantly switch between FREE and PAID on your phone
 - No need to stop/restart sessions
 - Clear visual identification in both desktop and mobile
-- Works great with tmux/psmux for persistent sessions
+- **With -UseDaemon**: Sessions survive terminal restarts, computer reboots, and auto-reconnect!
 
 **Advanced usage:**
 ```powershell
-dual-sessions -SessionName "MyWork"  # Custom session name
-dual-sessions -NoSymlinks            # Disable symlinks (shows warning)
+dual-sessions -SessionName "MyWork" -UseDaemon  # Custom session name + persistent
+dual-sessions -NoSymlinks                       # Disable symlinks (shows warning)
 ```
 
-See [Remote Access Guide](docs/REMOTE_ACCESS.md) for SSH and tmux setup.
+See [Remote Access Guide](docs/REMOTE_ACCESS.md) for persistent sessions setup and SSH/tmux configuration.
 
 ## 🤝 Contributing
 

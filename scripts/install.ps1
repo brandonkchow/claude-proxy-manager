@@ -228,8 +228,151 @@ Initialize-ClaudePriority -DefaultPriority $defaultPriority | Out-Null
 
 Write-Host "  [OK] Priority configuration created" -ForegroundColor Green
 
+# Step 8.5: Setup Happy Daemon for Persistent Sessions
+Write-Host "`n[8.5/10] Happy Daemon Setup (Persistent Mobile Sessions)" -ForegroundColor Cyan
+Write-Host "  Configure happy daemon to keep HappyCoder sessions alive permanently?" -ForegroundColor White
+Write-Host "  Sessions will survive terminal restarts and computer reboots." -ForegroundColor Gray
+Write-Host ""
+
+if (Prompt-YesNo "Enable happy daemon auto-start on Windows login?" $true) {
+
+    # Check if happy-coder is installed
+    Write-Host "  Checking for happy-coder..." -ForegroundColor Gray
+    try {
+        $happyVersion = npm list -g happy-coder 2>&1 | Out-String
+        if ($happyVersion -match "happy-coder@([\d\.]+)") {
+            $version = $Matches[1]
+            Write-Host "  [OK] happy-coder v$version installed" -ForegroundColor Green
+        } else {
+            throw "Not found"
+        }
+    } catch {
+        Write-Host "  [!] happy-coder not found" -ForegroundColor Yellow
+        if (Prompt-YesNo "Install happy-coder (required for persistent sessions)?") {
+            Write-Host "  Installing happy-coder..." -ForegroundColor Gray
+            npm install -g happy-coder
+            Write-Host "  [OK] happy-coder installed" -ForegroundColor Green
+        } else {
+            Write-Host "  [SKIP] Skipping daemon setup - happy-coder required" -ForegroundColor Yellow
+            $skipDaemon = $true
+        }
+    }
+
+    if (-not $skipDaemon) {
+        # Prompt for auto-start mode
+        Write-Host ""
+        Write-Host "  What should auto-start on Windows login?" -ForegroundColor Cyan
+        Write-Host "    [1] None - Just daemon (manual session start)" -ForegroundColor White
+        Write-Host "    [2] Dual - Both FREE and PAID sessions" -ForegroundColor White
+        Write-Host "    [3] Free - Only FREE (Antigravity) session" -ForegroundColor White
+        Write-Host "    [4] Paid - Only PAID (Claude Code) session" -ForegroundColor White
+        Write-Host ""
+
+        if ($NonInteractive) {
+            $modeChoice = "1"
+        } else {
+            $modeChoice = Read-Host "  Choose (1-4)"
+        }
+
+        $autoStartMode = switch ($modeChoice) {
+            "1" { "none" }
+            "2" { "dual" }
+            "3" { "free" }
+            "4" { "paid" }
+            default { "none" }
+        }
+
+        # Get default working directory if dual/free/paid selected
+        $defaultWorkDir = $null
+        if ($autoStartMode -ne "none") {
+            Write-Host ""
+            if ($NonInteractive) {
+                $defaultWorkDir = $env:USERPROFILE
+            } else {
+                $defaultWorkDir = Read-Host "  Default working directory for sessions [$env:USERPROFILE]"
+                if ([string]::IsNullOrWhiteSpace($defaultWorkDir)) {
+                    $defaultWorkDir = $env:USERPROFILE
+                }
+            }
+            Write-Host "  Using: $defaultWorkDir" -ForegroundColor Gray
+        }
+
+        # Create daemon config
+        $daemonConfig = @{
+            autoStartDaemon = $true
+            autoStartMode = $autoStartMode
+            defaultWorkingDirectory = $defaultWorkDir
+            healthCheckInterval = 300
+            restartOnFailure = $true
+            lastHealthCheck = $null
+        }
+
+        $daemonConfig | ConvertTo-Json | Set-Content "$installDir\daemon-config.json" -Encoding utf8
+        Write-Host "  [OK] Daemon configuration created" -ForegroundColor Green
+
+        # Create Task Scheduler task for auto-start
+        Write-Host "  Creating Windows Task Scheduler task..." -ForegroundColor Gray
+
+        $taskName = "HappyCoderDaemon"
+        $taskAction = New-ScheduledTaskAction `
+            -Execute "PowerShell.exe" `
+            -Argument "-ExecutionPolicy Bypass -WindowStyle Hidden -File `"$installDir\scripts\daemon-startup.ps1`""
+
+        $taskTrigger = New-ScheduledTaskTrigger -AtLogon -User $env:USERNAME
+        $taskSettings = New-ScheduledTaskSettingsSet `
+            -AllowStartIfOnBatteries `
+            -DontStopIfGoingOnBatteries `
+            -StartWhenAvailable `
+            -ExecutionTimeLimit (New-TimeSpan -Minutes 2)
+
+        try {
+            # Unregister existing task if it exists
+            Unregister-ScheduledTask -TaskName $taskName -Confirm:$false -ErrorAction SilentlyContinue
+
+            Register-ScheduledTask `
+                -TaskName $taskName `
+                -Action $taskAction `
+                -Trigger $taskTrigger `
+                -Settings $taskSettings `
+                -Description "Auto-start HappyCoder daemon for persistent mobile sessions" `
+                -RunLevel Limited | Out-Null
+
+            Write-Host "  [OK] Task Scheduler configured" -ForegroundColor Green
+            Write-Host "  Task: $taskName (runs at login)" -ForegroundColor Gray
+        } catch {
+            Write-Host "  [ERROR] Failed to create scheduled task: $_" -ForegroundColor Red
+        }
+
+        # Display summary
+        Write-Host ""
+        Write-Host "  DAEMON CONFIGURATION:" -ForegroundColor Cyan
+        Write-Host "    Auto-start daemon: Yes" -ForegroundColor Green
+        Write-Host "    Auto-start mode: $autoStartMode" -ForegroundColor Gray
+        if ($defaultWorkDir) {
+            Write-Host "    Working directory: $defaultWorkDir" -ForegroundColor Gray
+        }
+        Write-Host ""
+        Write-Host "  On next login, daemon will start automatically!" -ForegroundColor Yellow
+        Write-Host "  To start now: daemon-start" -ForegroundColor Cyan
+    }
+} else {
+    Write-Host "  [SKIP] Daemon auto-start disabled" -ForegroundColor Yellow
+    Write-Host "  You can enable it later by running the installer again" -ForegroundColor Gray
+
+    # Create minimal config (daemon disabled)
+    $daemonConfig = @{
+        autoStartDaemon = $false
+        autoStartMode = "none"
+        defaultWorkingDirectory = $null
+        healthCheckInterval = 300
+        restartOnFailure = $true
+        lastHealthCheck = $null
+    }
+    $daemonConfig | ConvertTo-Json | Set-Content "$installDir\daemon-config.json" -Encoding utf8
+}
+
 # Step 9: Optional Remote Access Setup
-Write-Host "`n[9/9] Remote Access Setup (Optional)" -ForegroundColor Cyan
+Write-Host "`n[9/10] Remote Access Setup (Optional)" -ForegroundColor Cyan
 Write-Host "  Set up SSH, tmux, and HappyCoder for mobile/remote access?" -ForegroundColor White
 
 if (Prompt-YesNo "Install remote access tools?" $false) {

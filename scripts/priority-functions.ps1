@@ -107,14 +107,17 @@ function Get-ClaudePriority {
     .SYNOPSIS
     Shows the current account priority order
     #>
-    
-    $priorityPath = "$env:USERPROFILE\.claude\priority.json"
-    
+    param(
+        [string]$PriorityConfigPath = "$env:USERPROFILE\.claude\priority.json"
+    )
+
+    $priorityPath = $PriorityConfigPath
+
     if (-not (Test-Path $priorityPath)) {
         Write-Host "No priority configuration found. Run Initialize-ClaudePriority first." -ForegroundColor Yellow
         return
     }
-    
+
     $priority = Get-Content $priorityPath -Raw | ConvertFrom-Json
     
     Write-Host "`n========================================" -ForegroundColor Cyan
