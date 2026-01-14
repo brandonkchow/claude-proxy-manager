@@ -995,6 +995,38 @@ if (-not (Test-Path $priorityPath)) {
     }
 }
 
+# Auto-start daemon if enabled in configuration
+$daemonConfigPath = "$env:USERPROFILE\.claude\claude-proxy-manager\daemon-config.json"
+if (Test-Path $daemonConfigPath) {
+    try {
+        $daemonConfig = Get-Content $daemonConfigPath -Raw | ConvertFrom-Json
+
+        if ($daemonConfig.autoStartDaemon) {
+            # Check if daemon is running
+            try {
+                $daemonStatus = happy daemon status 2>&1 | Out-String
+
+                if ($daemonStatus -match "not running|No daemon") {
+                    Write-Host "[INFO] Starting happy daemon..." -ForegroundColor Yellow
+                    $startOutput = happy daemon start 2>&1 | Out-String
+
+                    # Verify it started
+                    Start-Sleep -Seconds 2
+                    $checkStatus = happy daemon status 2>&1 | Out-String
+
+                    if ($checkStatus -match "Daemon is running") {
+                        Write-Host "[OK] Daemon started successfully" -ForegroundColor Green
+                    }
+                }
+            } catch {
+                # Silently fail - happy-coder might not be installed
+            }
+        }
+    } catch {
+        # Silently fail - config file might be malformed
+    }
+}
+
 # Load update checker
 . "$env:USERPROFILE\.claude\claude-proxy-manager\config\update-checker.ps1"
 
