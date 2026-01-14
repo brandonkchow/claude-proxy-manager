@@ -276,9 +276,28 @@ This generates `coverage-unit.xml` which can be viewed with:
 
 ### Pester Not Found
 
+**Symptom:** `New-PesterConfiguration : The term 'New-PesterConfiguration' is not recognized`
+
+**Solution:**
 ```powershell
-Install-Module -Name Pester -Force -SkipPublisherCheck -MinimumVersion 5.0.0
-Import-Module Pester
+# Install Pester 5.x for current user (no admin required)
+Install-Module -Name Pester -Force -SkipPublisherCheck -MinimumVersion 5.0.0 -Scope CurrentUser
+
+# Verify installation
+Get-Module -Name Pester -ListAvailable
+```
+
+### NuGet Provider Required
+
+**Symptom:** `NuGet provider is required to interact with NuGet-based repositories`
+
+**Solution:**
+```powershell
+# Install NuGet provider first
+Install-PackageProvider -Name NuGet -Force -Scope CurrentUser
+
+# Then install Pester
+Install-Module -Name Pester -Force -SkipPublisherCheck -MinimumVersion 5.0.0 -Scope CurrentUser
 ```
 
 ### Tests Failing Locally but Passing in CI
