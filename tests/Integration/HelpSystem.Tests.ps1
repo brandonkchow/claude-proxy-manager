@@ -17,7 +17,7 @@ Describe "Show-ClaudeHelp Function" {
         It "Should display help without parameters" {
             Show-ClaudeHelp
 
-            Should -Invoke Write-Host -Times -Minimum 10
+            Should -Invoke Write-Host -AtLeast 10
         }
 
         It "Should show all command categories" {
