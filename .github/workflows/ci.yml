@@ -85,9 +85,9 @@ jobs:
         if: always()
         with:
           name: Pester Tests
-          path: 'test-results-*.xml'
+          path: 'test-results-unit.xml'
           reporter: java-junit
-          fail-on-error: false  # Allow integration test failures
+          fail-on-error: true  # Unit tests must pass
 
   lint:
     name: PowerShell Script Analyzer
