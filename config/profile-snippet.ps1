@@ -46,6 +46,7 @@ function Start-AntigravityProxy {
     param()
     Write-Host "Starting Antigravity proxy..." -ForegroundColor Cyan
     $env:PORT = '8081'
+    $env:FALLBACK = 'true'
     antigravity-claude-proxy start
 }
 
@@ -470,6 +471,7 @@ function Start-HappyFree {
         Write-Host "Starting Antigravity Proxy in background..." -ForegroundColor Yellow
         Start-Job -ScriptBlock {
             $env:PORT = '8081'
+            $env:FALLBACK = 'true'
             antigravity-claude-proxy start
         } | Out-Null
 
@@ -602,6 +604,7 @@ function Start-DualSessions {
         Write-Host "  Starting proxy in background..." -ForegroundColor Yellow
         Start-Job -ScriptBlock {
             $env:PORT = '8081'
+            $env:FALLBACK = 'true'
             antigravity-claude-proxy start
         } | Out-Null
 
