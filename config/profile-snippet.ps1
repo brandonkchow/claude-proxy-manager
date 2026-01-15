@@ -64,10 +64,9 @@ function Get-ClaudeMode {
             Write-Host "   Mode: FREE (Antigravity Proxy)" -ForegroundColor Green
             Write-Host "   Using: Google accounts" -ForegroundColor Gray
             
-            try {
-                $null = Invoke-WebRequest -Uri "http://localhost:8081/health" -UseBasicParsing -TimeoutSec 2 -ErrorAction Stop
+            if (Test-PortOpen -Port 8081) {
                 Write-Host "   Proxy: Running" -ForegroundColor Green
-            } catch {
+            } else {
                 Write-Host "   Proxy: Not Running" -ForegroundColor Red
                 Write-Host "   Start with: start-proxy" -ForegroundColor Yellow
             }
@@ -78,8 +77,7 @@ function Get-ClaudeMode {
 
         # Show daemon status if happy-coder is installed
         try {
-            $happyVersion = happy --version 2>$null
-            if ($happyVersion) {
+            if (Get-Command happy -ErrorAction SilentlyContinue) {
                 $daemonStatus = Get-HappyDaemonStatus
                 Write-Host ""
                 if ($daemonStatus.Running) {
