@@ -842,14 +842,27 @@ Set-Alias -Name claude-update -Value Update-ClaudeProxyManager
 # Happy Daemon Management - Persistent Sessions
 # ============================================
 
+# Cache daemon status to avoid slow CLI calls on every profile load
+$global:HappyDaemonStatusCache = $null
+$global:HappyDaemonStatusTime = $null
+
 function Get-HappyDaemonStatus {
     <#
     .SYNOPSIS
         Check if happy daemon is running and get session count
 
     .DESCRIPTION
-        Parses output of 'happy daemon status' and returns structured info
+        Parses output of 'happy daemon status' and returns structured info.
+        Uses caching to improve performance on repeated calls.
     #>
+    param(
+        [switch]$Refresh
+    )
+
+    # Use cached result if less than 5 seconds old
+    if (-not $Refresh -and $global:HappyDaemonStatusCache -and ((Get-Date) - $global:HappyDaemonStatusTime).TotalSeconds -lt 5) {
+        return $global:HappyDaemonStatusCache
+    }
 
     try {
         $output = happy daemon status 2>&1 | Out-String
@@ -874,6 +887,10 @@ function Get-HappyDaemonStatus {
             $status.ProcessCount = [int]$Matches[1]
         }
 
+        # Update cache
+        $global:HappyDaemonStatusCache = $status
+        $global:HappyDaemonStatusTime = Get-Date
+
         return $status
     } catch {
         Write-Host "[ERROR] Failed to check daemon status: $_" -ForegroundColor Red
@@ -893,8 +910,8 @@ function Start-HappyDaemon {
 
     Write-Host "`nStarting happy daemon..." -ForegroundColor Cyan
 
-    # Check if already running
-    $status = Get-HappyDaemonStatus
+    # Check if already running (force refresh)
+    $status = Get-HappyDaemonStatus -Refresh
     if ($status.Running) {
         Write-Host "[INFO] Daemon is already running" -ForegroundColor Yellow
         Write-Host "  Active sessions: $($status.SessionCount)" -ForegroundColor Gray
@@ -903,7 +920,7 @@ function Start-HappyDaemon {
 
     # Ensure antigravity proxy is running (needed for FREE mode)
     Write-Host "  Checking antigravity proxy..." -ForegroundColor Gray
-    $proxyRunning = Test-NetConnection -ComputerName localhost -Port 8081 -InformationLevel Quiet -WarningAction SilentlyContinue
+    $proxyRunning = Test-PortOpen -Port 8081
 
     if (-not $proxyRunning) {
         Write-Host "  [!] Antigravity proxy not running" -ForegroundColor Yellow
@@ -920,7 +937,7 @@ function Start-HappyDaemon {
         do {
             Start-Sleep -Seconds 1
             $attempt++
-            $proxyRunning = Test-NetConnection -ComputerName localhost -Port 8081 -InformationLevel Quiet -WarningAction SilentlyContinue
+            $proxyRunning = Test-PortOpen -Port 8081
             if ($proxyRunning) {
                 Write-Host "  [OK] Proxy ready" -ForegroundColor Green
                 break
@@ -941,7 +958,7 @@ function Start-HappyDaemon {
 
         # Verify it started
         Start-Sleep -Seconds 2
-        $status = Get-HappyDaemonStatus
+        $status = Get-HappyDaemonStatus -Refresh
 
         if ($status.Running) {
             Write-Host "`n[OK] Happy daemon started successfully!" -ForegroundColor Green
@@ -1082,20 +1099,22 @@ if (Test-Path $daemonConfigPath) {
         $daemonConfig = Get-Content $daemonConfigPath -Raw | ConvertFrom-Json
 
         if ($daemonConfig.autoStartDaemon) {
-            # Check if daemon is running
+            # Check if daemon is running using helper (cached)
             try {
-                $daemonStatus = happy daemon status 2>&1 | Out-String
+                if (Get-Command happy -ErrorAction SilentlyContinue) {
+                    $status = Get-HappyDaemonStatus
 
-                if ($daemonStatus -match "not running|No daemon") {
-                    Write-Host "[INFO] Starting happy daemon..." -ForegroundColor Yellow
-                    $startOutput = happy daemon start 2>&1 | Out-String
+                    if (-not $status.Running) {
+                        Write-Host "[INFO] Starting happy daemon..." -ForegroundColor Yellow
+                        $startOutput = happy daemon start 2>&1 | Out-String
 
-                    # Verify it started
-                    Start-Sleep -Seconds 2
-                    $checkStatus = happy daemon status 2>&1 | Out-String
+                        # Verify it started (force refresh)
+                        Start-Sleep -Seconds 2
+                        $checkStatus = Get-HappyDaemonStatus -Refresh
 
-                    if ($checkStatus -match "Daemon is running") {
-                        Write-Host "[OK] Daemon started successfully" -ForegroundColor Green
+                        if ($checkStatus.Running) {
+                            Write-Host "[OK] Daemon started successfully" -ForegroundColor Green
+                        }
                     }
                 }
             } catch {
