@@ -27,6 +27,29 @@ function Test-PortOpen {
     }
 }
 
+# Helper: Generate ASCII progress bar for quotas
+function Get-ProgressBar {
+    param([string]$Percentage)
+
+    if ($Percentage -match "(\d+)") {
+        $val = [int]$Matches[1]
+    } else {
+        $val = 0
+    }
+
+    if ($val -gt 100) { $val = 100 }
+    if ($val -lt 0) { $val = 0 }
+
+    $total = 10
+    $filled = [math]::Round(($val / 100) * $total)
+    $empty = $total - $filled
+
+    $filledStr = "=" * $filled
+    $emptyStr = "." * $empty
+
+    return "[$filledStr$emptyStr]"
+}
+
 # Claude Mode Switching Functions
 function Use-ClaudePaid {
     param()
@@ -152,7 +175,8 @@ function Check-ClaudeUsage {
                         $cReset = if ($claude -and $claude.resetTime) { 
                             try { (Get-Date $claude.resetTime).ToLocalTime().ToString("g") } catch { $claude.resetTime }
                         } else { "" }
-                        Write-Host "    Claude (Sonnet 4.5): $cRem" -ForegroundColor $(if ($cRem -ne "0%" -and $cRem -ne "0" -and $cRem -ne "0% (Exhausted)") { "Green" } else { "Red" }) -NoNewline
+                        $cBar = Get-ProgressBar $cRem
+                        Write-Host "    Claude (Sonnet 4.5): $cBar $cRem" -ForegroundColor $(if ($cRem -ne "0%" -and $cRem -ne "0" -and $cRem -ne "0% (Exhausted)") { "Green" } else { "Red" }) -NoNewline
                         if ($cReset) { Write-Host " (Resets: $cReset)" -ForegroundColor Gray } else { Write-Host "" }
                         
                         $gemini = $accountData.limits.'gemini-3-flash'
@@ -160,7 +184,8 @@ function Check-ClaudeUsage {
                         $gReset = if ($gemini -and $gemini.resetTime) { 
                             try { (Get-Date $gemini.resetTime).ToLocalTime().ToString("g") } catch { $gemini.resetTime }
                         } else { "" }
-                        Write-Host "    Gemini (Flash 3):    $gRem" -ForegroundColor $(if ($gRem -ne "0%" -and $gRem -ne "0" -and $gRem -ne "0% (Exhausted)") { "Green" } else { "Red" }) -NoNewline
+                        $gBar = Get-ProgressBar $gRem
+                        Write-Host "    Gemini (Flash 3):    $gBar $gRem" -ForegroundColor $(if ($gRem -ne "0%" -and $gRem -ne "0" -and $gRem -ne "0% (Exhausted)") { "Green" } else { "Red" }) -NoNewline
                         if ($gReset) { Write-Host " (Resets: $gReset)" -ForegroundColor Gray } else { Write-Host "" }
                     }
                 } catch {
