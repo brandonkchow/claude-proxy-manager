@@ -14,3 +14,8 @@
 **Vulnerability:** Command Injection in `scripts/daemon-startup.ps1` via string interpolation of `$workDir` into a Here-String passed to `Start-Process powershell -Command`.
 **Learning:** Similar to previous findings, user-controlled configuration (like `defaultWorkingDirectory` in `daemon-config.json`) can be manipulated (or just contain accidental single quotes) to break out of single-quoted strings in generated PowerShell commands.
 **Prevention:** Always escape single quotes (`-replace "'", "''"`) when interpolating variables into single-quoted strings inside PowerShell script blocks or commands.
+
+## 2025-05-25 - [TOCTOU Privilege Escalation in Installer]
+**Vulnerability:** Local Privilege Escalation in `scripts/install.ps1`. The script wrote elevated commands to a temporary file (`$env:TEMP\install-openssh.ps1`) and then executed it with `Start-Process -Verb RunAs`. A malicious local user could replace the temporary file between creation and execution (Race Condition/Time-of-Check Time-of-Use), causing arbitrary code to run as Administrator.
+**Learning:** Writing elevated commands to a temporary file in a world-writable location (like `$env:TEMP` can be) creates a race condition.
+**Prevention:** Use `powershell -EncodedCommand <Base64String>` to pass the script block directly to the elevated process arguments, avoiding the filesystem entirely.
