@@ -124,8 +124,10 @@ try {
                 }
                 "free" {
                     Write-Log "Starting FREE session in: $workDir"
+                    # Escape single quotes to prevent command injection
+                    $safeWorkDir = $workDir -replace "'", "''"
                     Start-Process powershell -ArgumentList "-NoExit", "-Command", @"
-Set-Location '$workDir'
+Set-Location '$safeWorkDir'
 `$Host.UI.RawUI.WindowTitle = 'HappyCoder - FREE (Antigravity)'
 Write-Host 'Starting FREE mode session...' -ForegroundColor Green
 happy --claude-env ANTHROPIC_AUTH_TOKEN=test --claude-env ANTHROPIC_BASE_URL=http://localhost:8081
@@ -133,8 +135,10 @@ happy --claude-env ANTHROPIC_AUTH_TOKEN=test --claude-env ANTHROPIC_BASE_URL=htt
                 }
                 "paid" {
                     Write-Log "Starting PAID session in: $workDir"
+                    # Escape single quotes to prevent command injection
+                    $safeWorkDir = $workDir -replace "'", "''"
                     Start-Process powershell -ArgumentList "-NoExit", "-Command", @"
-Set-Location '$workDir'
+Set-Location '$safeWorkDir'
 `$Host.UI.RawUI.WindowTitle = 'HappyCoder - PAID (Claude Code)'
 Write-Host 'Starting PAID mode session...' -ForegroundColor Blue
 happy
