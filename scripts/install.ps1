@@ -398,20 +398,17 @@ Write-Host 'OpenSSH Server installed successfully!' -ForegroundColor Green
 pause
 "@
             
-            # Save to temp file
-            $tempScript = "$env:TEMP\install-openssh.ps1"
-            $elevatedScript | Set-Content $tempScript
+            # Encode script to avoid temp file vulnerability (TOCTOU)
+            $bytes = [System.Text.Encoding]::Unicode.GetBytes($elevatedScript)
+            $encodedCommand = [Convert]::ToBase64String($bytes)
             
             # Run with elevation
             try {
-                Start-Process powershell -ArgumentList "-ExecutionPolicy Bypass -File `"$tempScript`"" -Verb RunAs -Wait
+                Start-Process powershell -ArgumentList "-ExecutionPolicy Bypass -EncodedCommand $encodedCommand" -Verb RunAs -Wait
                 Write-Host "  [OK] OpenSSH Server installed" -ForegroundColor Green
             } catch {
                 Write-Host "  [!] User cancelled elevation or installation failed" -ForegroundColor Yellow
             }
-            
-            # Cleanup
-            Remove-Item $tempScript -ErrorAction SilentlyContinue
         } else {
             Write-Host "  [OK] OpenSSH Server already installed" -ForegroundColor Green
         }
@@ -430,17 +427,16 @@ if (-not (Get-NetFirewallRule -Name 'OpenSSH-Server-In-TCP' -ErrorAction Silentl
 Write-Host 'OpenSSH Server installed successfully!' -ForegroundColor Green
 pause
 "@
-        $tempScript = "$env:TEMP\install-openssh.ps1"
-        $elevatedScript | Set-Content $tempScript
+        # Encode script to avoid temp file vulnerability (TOCTOU)
+        $bytes = [System.Text.Encoding]::Unicode.GetBytes($elevatedScript)
+        $encodedCommand = [Convert]::ToBase64String($bytes)
         
         try {
-            Start-Process powershell -ArgumentList "-ExecutionPolicy Bypass -File `"$tempScript`"" -Verb RunAs -Wait
+            Start-Process powershell -ArgumentList "-ExecutionPolicy Bypass -EncodedCommand $encodedCommand" -Verb RunAs -Wait
             Write-Host "  [OK] OpenSSH Server installed" -ForegroundColor Green
         } catch {
             Write-Host "  [!] Installation cancelled or failed" -ForegroundColor Yellow
         }
-        
-        Remove-Item $tempScript -ErrorAction SilentlyContinue
     }
     
     # 9b: Install psmux (Windows tmux alternative)
@@ -486,11 +482,12 @@ choco install psmux -y
 Write-Host 'Chocolatey and psmux installed successfully!' -ForegroundColor Green
 pause
 "@
-            $tempScript = "$env:TEMP\install-choco-psmux.ps1"
-            $chocoInstallScript | Set-Content $tempScript
+            # Encode script to avoid temp file vulnerability (TOCTOU)
+            $bytes = [System.Text.Encoding]::Unicode.GetBytes($chocoInstallScript)
+            $encodedCommand = [Convert]::ToBase64String($bytes)
             
             try {
-                Start-Process powershell -ArgumentList "-ExecutionPolicy Bypass -File `"$tempScript`"" -Verb RunAs -Wait
+                Start-Process powershell -ArgumentList "-ExecutionPolicy Bypass -EncodedCommand $encodedCommand" -Verb RunAs -Wait
                 Write-Host "  [OK] Chocolatey and psmux installed" -ForegroundColor Green
             } catch {
                 Write-Host "  [!] Installation cancelled or failed" -ForegroundColor Yellow
@@ -498,8 +495,6 @@ pause
                 Write-Host "      1. Install Chocolatey: https://chocolatey.org/install" -ForegroundColor Gray
                 Write-Host "      2. Run: choco install psmux" -ForegroundColor Gray
             }
-            
-            Remove-Item $tempScript -ErrorAction SilentlyContinue
         }
     }
     
