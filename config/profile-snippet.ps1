@@ -499,20 +499,22 @@ function Start-HappyFree {
         } | Out-Null
 
         # Wait for proxy to be ready
-        Write-Host "Waiting for proxy to start..." -ForegroundColor Yellow
+        Write-Host "Waiting for proxy to start..." -NoNewline -ForegroundColor Yellow
         $maxAttempts = 30 # Check more frequently (every 0.5s)
         $attempt = 0
         do {
+            Write-Host "." -NoNewline -ForegroundColor Yellow
             Start-Sleep -Milliseconds 500
             $attempt++
             $proxyRunning = Test-PortOpen -Port 8081
             if ($proxyRunning) {
-                Write-Host "Proxy is ready!" -ForegroundColor Green
+                Write-Host "`nProxy is ready!" -ForegroundColor Green
                 break
             }
         } while ($attempt -lt $maxAttempts)
 
         if (-not $proxyRunning) {
+            Write-Host ""
             Write-Host "Warning: Proxy may not have started properly" -ForegroundColor Yellow
         }
     } else {
@@ -624,7 +626,7 @@ function Start-DualSessions {
     Write-Host "  Ensuring Antigravity proxy is running..." -ForegroundColor Cyan
     $proxyRunning = Test-PortOpen -Port 8081
     if (-not $proxyRunning) {
-        Write-Host "  Starting proxy in background..." -ForegroundColor Yellow
+        Write-Host "  Starting proxy in background..." -NoNewline -ForegroundColor Yellow
         Start-Job -ScriptBlock {
             $env:PORT = '8081'
             $env:FALLBACK = 'true'
@@ -635,14 +637,17 @@ function Start-DualSessions {
         $maxAttempts = 30
         $attempt = 0
         do {
+            Write-Host "." -NoNewline -ForegroundColor Yellow
             Start-Sleep -Milliseconds 500
             $attempt++
             $proxyRunning = Test-PortOpen -Port 8081
             if ($proxyRunning) {
-                Write-Host "  Proxy ready!" -ForegroundColor Green
+                Write-Host "`n  Proxy ready!" -ForegroundColor Green
                 break
             }
         } while ($attempt -lt $maxAttempts)
+
+        if (-not $proxyRunning) { Write-Host "" }
     } else {
         Write-Host "  Proxy already running!" -ForegroundColor Green
     }
@@ -915,19 +920,22 @@ function Start-HappyDaemon {
         } | Out-Null
 
         # Wait for proxy
+        Write-Host "  Waiting for proxy..." -NoNewline -ForegroundColor Gray
         $maxAttempts = 15
         $attempt = 0
         do {
+            Write-Host "." -NoNewline -ForegroundColor Gray
             Start-Sleep -Seconds 1
             $attempt++
             $proxyRunning = Test-NetConnection -ComputerName localhost -Port 8081 -InformationLevel Quiet -WarningAction SilentlyContinue
             if ($proxyRunning) {
-                Write-Host "  [OK] Proxy ready" -ForegroundColor Green
+                Write-Host "`n  [OK] Proxy ready" -ForegroundColor Green
                 break
             }
         } while ($attempt -lt $maxAttempts)
 
         if (-not $proxyRunning) {
+            Write-Host ""
             Write-Host "  [!] Proxy failed to start - FREE mode sessions may not work" -ForegroundColor Yellow
         }
     } else {
