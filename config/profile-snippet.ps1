@@ -851,6 +851,12 @@ function Get-HappyDaemonStatus {
         Parses output of 'happy daemon status' and returns structured info
     #>
 
+    # Check cache (TTL 5 seconds)
+    if ($global:HappyDaemonStatusCache -and
+        $global:HappyDaemonStatusCache.Time -gt (Get-Date).AddSeconds(-5)) {
+        return $global:HappyDaemonStatusCache.Data
+    }
+
     try {
         $output = happy daemon status 2>&1 | Out-String
 
@@ -872,6 +878,12 @@ function Get-HappyDaemonStatus {
         # Parse process count
         if ($output -match "(\d+) happy processes") {
             $status.ProcessCount = [int]$Matches[1]
+        }
+
+        # Update cache
+        $global:HappyDaemonStatusCache = @{
+            Time = Get-Date
+            Data = $status
         }
 
         return $status
@@ -941,6 +953,7 @@ function Start-HappyDaemon {
 
         # Verify it started
         Start-Sleep -Seconds 2
+        $global:HappyDaemonStatusCache = $null
         $status = Get-HappyDaemonStatus
 
         if ($status.Running) {
@@ -979,6 +992,7 @@ function Stop-HappyDaemon {
     try {
         $output = happy daemon stop 2>&1 | Out-String
         Start-Sleep -Seconds 1
+        $global:HappyDaemonStatusCache = $null
 
         # Verify it stopped
         $status = Get-HappyDaemonStatus
@@ -1084,17 +1098,18 @@ if (Test-Path $daemonConfigPath) {
         if ($daemonConfig.autoStartDaemon) {
             # Check if daemon is running
             try {
-                $daemonStatus = happy daemon status 2>&1 | Out-String
+                $daemonStatus = Get-HappyDaemonStatus
 
-                if ($daemonStatus -match "not running|No daemon") {
+                if (-not $daemonStatus.Running) {
                     Write-Host "[INFO] Starting happy daemon..." -ForegroundColor Yellow
                     $startOutput = happy daemon start 2>&1 | Out-String
 
                     # Verify it started
                     Start-Sleep -Seconds 2
-                    $checkStatus = happy daemon status 2>&1 | Out-String
+                    $global:HappyDaemonStatusCache = $null
+                    $checkStatus = Get-HappyDaemonStatus
 
-                    if ($checkStatus -match "Daemon is running") {
+                    if ($checkStatus.Running) {
                         Write-Host "[OK] Daemon started successfully" -ForegroundColor Green
                     }
                 }
