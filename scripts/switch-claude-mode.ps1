@@ -112,7 +112,24 @@ if ($Mode -eq 'paid') {
                 if ($accounts) {
                     Write-Host "   Connected Accounts:" -ForegroundColor Gray
                     foreach ($acc in $accounts) {
-                        Write-Host "    • $($acc.email)" -ForegroundColor White
+                        # Extract usage for immediate feedback
+                        $claude = $acc.limits.'claude-sonnet-4-5'
+                        $usage = if ($claude -and $claude.remaining) { $claude.remaining } else { "N/A" }
+
+                        $statusColor = "Green"
+                        if ($usage -eq "0%" -or $usage -eq "0" -or $usage -match "Exhausted") {
+                            $statusColor = "Red"
+                        } elseif ($usage -eq "N/A") {
+                            $statusColor = "DarkGray"
+                        }
+
+                        Write-Host "    • $($acc.email)" -NoNewline -ForegroundColor White
+
+                        if ($usage -ne "N/A") {
+                            Write-Host " [$usage]" -ForegroundColor $statusColor
+                        } else {
+                            Write-Host " [-]" -ForegroundColor $statusColor
+                        }
                     }
                 } else {
                      Write-Host "   Accounts: (None detected)" -ForegroundColor Gray
