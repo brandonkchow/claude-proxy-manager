@@ -25,6 +25,34 @@ param(
     [string]$SettingsPath = "$env:USERPROFILE\.claude\settings.json"
 )
 
+# Security: Validate SettingsPath to prevent arbitrary file overwrite
+# 1. Must end in .json
+if (-not $SettingsPath.EndsWith(".json", [System.StringComparison]::OrdinalIgnoreCase)) {
+    Write-Error "Security Error: SettingsPath must end with .json"
+    exit 1
+}
+
+# 2. Must be within user profile (prevent system file overwrite)
+# We resolve the full path to check against USERPROFILE
+try {
+    $fullPath = [System.IO.Path]::GetFullPath($SettingsPath)
+    # Ensure USERPROFILE has trailing slash for correct directory prefix matching
+    $userProfile = $env:USERPROFILE
+    if (-not $userProfile.EndsWith([System.IO.Path]::DirectorySeparatorChar)) {
+        $userProfile += [System.IO.Path]::DirectorySeparatorChar
+    }
+
+    # Check if full path starts with user profile directory
+    if (-not ($fullPath.StartsWith($userProfile, [System.StringComparison]::OrdinalIgnoreCase))) {
+        Write-Error "Security Error: SettingsPath must be within user profile ($env:USERPROFILE)"
+        exit 1
+    }
+} catch {
+    # If path is invalid/malformed, block it
+    Write-Error "Security Error: Invalid SettingsPath"
+    exit 1
+}
+
 # Ensure settings directory exists
 $settingsDir = Split-Path -Parent $SettingsPath
 if (-not (Test-Path $settingsDir)) {
