@@ -50,6 +50,39 @@ function Get-ProgressBar {
     return "[$filledStr$emptyStr]"
 }
 
+# Helper: Get human readable relative time
+function Get-RelativeTime {
+    param([datetime]$TargetTime)
+
+    $now = Get-Date
+    $diff = $TargetTime - $now
+
+    # If time is in the past
+    if ($diff.TotalSeconds -lt 0) {
+        return "Ready now"
+    }
+
+    $parts = @()
+    if ($diff.Days -gt 0) { $parts += "$($diff.Days)d" }
+    if ($diff.Hours -gt 0) { $parts += "$($diff.Hours)h" }
+    if ($diff.Minutes -gt 0) { $parts += "$($diff.Minutes)m" }
+
+    if ($parts.Count -eq 0) {
+        if ($diff.Seconds -gt 0) {
+            return "< 1m"
+        } else {
+            return "Ready now"
+        }
+    }
+
+    # Take only the two most significant units to keep it short
+    if ($parts.Count -gt 2) {
+        $parts = $parts[0..1]
+    }
+
+    return "in " + ($parts -join " ")
+}
+
 # Claude Mode Switching Functions
 function Use-ClaudePaid {
     param()
@@ -172,21 +205,41 @@ function Check-ClaudeUsage {
                     if ($accountData) {
                         $claude = $accountData.limits.'claude-sonnet-4-5'
                         $cRem = if ($claude -and $claude.remaining -ne "N/A" -and $claude.remaining -ne $null) { $claude.remaining } else { "0% (Exhausted)" }
-                        $cReset = if ($claude -and $claude.resetTime) { 
-                            try { (Get-Date $claude.resetTime).ToLocalTime().ToString("g") } catch { $claude.resetTime }
-                        } else { "" }
+
+                        $cResetObj = $null
+                        $cResetStr = ""
+                        if ($claude -and $claude.resetTime) {
+                            try {
+                                $cResetObj = (Get-Date $claude.resetTime).ToLocalTime()
+                                $cResetStr = $cResetObj.ToString("t") # Short time format
+                            } catch {
+                                $cResetStr = $claude.resetTime
+                            }
+                        }
+                        $cRelative = if ($cResetObj) { " • " + (Get-RelativeTime $cResetObj) } else { "" }
+
                         $cBar = Get-ProgressBar $cRem
                         Write-Host "    Claude (Sonnet 4.5): $cBar $cRem" -ForegroundColor $(if ($cRem -ne "0%" -and $cRem -ne "0" -and $cRem -ne "0% (Exhausted)") { "Green" } else { "Red" }) -NoNewline
-                        if ($cReset) { Write-Host " (Resets: $cReset)" -ForegroundColor Gray } else { Write-Host "" }
+                        if ($cResetStr) { Write-Host " (Resets: $cResetStr$cRelative)" -ForegroundColor Gray } else { Write-Host "" }
                         
                         $gemini = $accountData.limits.'gemini-3-flash'
                         $gRem = if ($gemini -and $gemini.remaining -ne "N/A" -and $gemini.remaining -ne $null) { $gemini.remaining } else { "0% (Exhausted)" }
-                        $gReset = if ($gemini -and $gemini.resetTime) { 
-                            try { (Get-Date $gemini.resetTime).ToLocalTime().ToString("g") } catch { $gemini.resetTime }
-                        } else { "" }
+
+                        $gResetObj = $null
+                        $gResetStr = ""
+                        if ($gemini -and $gemini.resetTime) {
+                            try {
+                                $gResetObj = (Get-Date $gemini.resetTime).ToLocalTime()
+                                $gResetStr = $gResetObj.ToString("t") # Short time format
+                            } catch {
+                                $gResetStr = $gemini.resetTime
+                            }
+                        }
+                        $gRelative = if ($gResetObj) { " • " + (Get-RelativeTime $gResetObj) } else { "" }
+
                         $gBar = Get-ProgressBar $gRem
                         Write-Host "    Gemini (Flash 3):    $gBar $gRem" -ForegroundColor $(if ($gRem -ne "0%" -and $gRem -ne "0" -and $gRem -ne "0% (Exhausted)") { "Green" } else { "Red" }) -NoNewline
-                        if ($gReset) { Write-Host " (Resets: $gReset)" -ForegroundColor Gray } else { Write-Host "" }
+                        if ($gResetStr) { Write-Host " (Resets: $gResetStr$gRelative)" -ForegroundColor Gray } else { Write-Host "" }
                     }
                 } catch {
                     Write-Host "    Proxy not running" -ForegroundColor Yellow
