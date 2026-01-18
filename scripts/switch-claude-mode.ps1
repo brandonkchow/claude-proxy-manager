@@ -112,7 +112,21 @@ if ($Mode -eq 'paid') {
                 if ($accounts) {
                     Write-Host "   Connected Accounts:" -ForegroundColor Gray
                     foreach ($acc in $accounts) {
-                        Write-Host "    • $($acc.email)" -ForegroundColor White
+                        # Visual Quota Indicator
+                        $limit = if ($acc.limits) { $acc.limits.'claude-sonnet-4-5' } else { $null }
+                        $rem = if ($null -ne $limit -and $limit.remaining) { $limit.remaining } else { "N/A" }
+
+                        Write-Host "    • $($acc.email)" -NoNewline -ForegroundColor White
+
+                        if ($rem -match "(\d+)") {
+                            $v = [int]$Matches[1]
+                            $f = [math]::Round(($v / 100) * 10); if ($f -gt 10) {$f=10}; if ($f -lt 0) {$f=0}
+                            $bar = "[" + ("=" * $f) + ("." * (10 - $f)) + "]"
+                            $col = if ($v -gt 50) { "Green" } elseif ($v -gt 20) { "Yellow" } else { "Red" }
+                            Write-Host " $bar $rem" -ForegroundColor $col
+                        } else {
+                            Write-Host " (Quota: $rem)" -ForegroundColor DarkGray
+                        }
                     }
                 } else {
                      Write-Host "   Accounts: (None detected)" -ForegroundColor Gray
