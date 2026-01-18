@@ -848,8 +848,17 @@ function Get-HappyDaemonStatus {
         Check if happy daemon is running and get session count
 
     .DESCRIPTION
-        Parses output of 'happy daemon status' and returns structured info
+        Parses output of 'happy daemon status' and returns structured info.
+        Caches result for 5 seconds to prevent redundant calls during startup.
     #>
+
+    # Check cache to optimize startup performance
+    $now = Get-Date
+    if ($global:_CPM_HappyDaemonStatusCache -and
+        $global:_CPM_HappyDaemonStatusCacheTime -and
+        ($now - $global:_CPM_HappyDaemonStatusCacheTime).TotalSeconds -lt 5) {
+        return $global:_CPM_HappyDaemonStatusCache
+    }
 
     try {
         $output = happy daemon status 2>&1 | Out-String
@@ -873,6 +882,10 @@ function Get-HappyDaemonStatus {
         if ($output -match "(\d+) happy processes") {
             $status.ProcessCount = [int]$Matches[1]
         }
+
+        # Update cache
+        $global:_CPM_HappyDaemonStatusCache = $status
+        $global:_CPM_HappyDaemonStatusCacheTime = $now
 
         return $status
     } catch {
@@ -1083,23 +1096,27 @@ if (Test-Path $daemonConfigPath) {
 
         if ($daemonConfig.autoStartDaemon) {
             # Check if daemon is running
-            try {
-                $daemonStatus = happy daemon status 2>&1 | Out-String
+            # Use Get-Command check first to avoid error spam if not installed
+            if (Get-Command happy -ErrorAction SilentlyContinue) {
+                try {
+                    # Use helper function to benefit from caching
+                    $daemonStatus = Get-HappyDaemonStatus
 
-                if ($daemonStatus -match "not running|No daemon") {
-                    Write-Host "[INFO] Starting happy daemon..." -ForegroundColor Yellow
-                    $startOutput = happy daemon start 2>&1 | Out-String
+                    if (-not $daemonStatus.Running) {
+                        Write-Host "[INFO] Starting happy daemon..." -ForegroundColor Yellow
+                        $startOutput = happy daemon start 2>&1 | Out-String
 
-                    # Verify it started
-                    Start-Sleep -Seconds 2
-                    $checkStatus = happy daemon status 2>&1 | Out-String
+                        # Verify it started
+                        Start-Sleep -Seconds 2
+                        $checkStatus = happy daemon status 2>&1 | Out-String
 
-                    if ($checkStatus -match "Daemon is running") {
-                        Write-Host "[OK] Daemon started successfully" -ForegroundColor Green
+                        if ($checkStatus -match "Daemon is running") {
+                            Write-Host "[OK] Daemon started successfully" -ForegroundColor Green
+                        }
                     }
+                } catch {
+                    # Silently fail - happy-coder might not be installed
                 }
-            } catch {
-                # Silently fail - happy-coder might not be installed
             }
         }
     } catch {
