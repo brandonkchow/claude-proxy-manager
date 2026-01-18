@@ -14,3 +14,8 @@
 **Vulnerability:** Command Injection in `scripts/daemon-startup.ps1` via string interpolation of `$workDir` into a Here-String passed to `Start-Process powershell -Command`.
 **Learning:** Similar to previous findings, user-controlled configuration (like `defaultWorkingDirectory` in `daemon-config.json`) can be manipulated (or just contain accidental single quotes) to break out of single-quoted strings in generated PowerShell commands.
 **Prevention:** Always escape single quotes (`-replace "'", "''"`) when interpolating variables into single-quoted strings inside PowerShell script blocks or commands.
+
+## 2025-06-15 - [Path Traversal and Partial Matching in PowerShell]
+**Vulnerability:** In `scripts/switch-claude-mode.ps1`, the `SettingsPath` parameter was originally not validated, allowing arbitrary file overwrite. A naive fix using `StartsWith` for path validation introduced a partial matching vulnerability (e.g., `C:\Users\Bob` matches `C:\Users\Bobby`).
+**Learning:** When validating paths using string prefix matching, you must ensure the prefix includes a directory separator to prevent partial directory name matches. Additionally, filesystem paths on Windows are case-insensitive, requiring `OrdinalIgnoreCase` comparison.
+**Prevention:** Always resolve paths to absolute paths (`GetFullPath`), append a trailing directory separator to the allowed root path, and use case-insensitive comparison (`[System.StringComparison]::OrdinalIgnoreCase`) when validating path containment.

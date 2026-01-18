@@ -25,25 +25,51 @@ param(
     [string]$SettingsPath = "$env:USERPROFILE\.claude\settings.json"
 )
 
+# SECURITY VALIDATION
+# Prevent arbitrary file write vulnerabilities
+if (-not $SettingsPath.EndsWith('.json', [System.StringComparison]::OrdinalIgnoreCase)) {
+    Throw "SettingsPath must end with .json"
+}
+
+# Resolve full path to handle relative paths and '..'
+$fullSettingsPath = $null
+try {
+    $fullSettingsPath = [System.IO.Path]::GetFullPath($SettingsPath)
+} catch {
+    Throw "Invalid SettingsPath: $_"
+}
+
+# Ensure path is within user profile
+# Note: On some systems, $env:USERPROFILE might need normalization
+$userProfile = [System.IO.Path]::GetFullPath($env:USERPROFILE)
+# Add trailing slash to prevent partial matches (e.g., C:\Users\Bob vs C:\Users\Bobby)
+if (-not $userProfile.EndsWith([System.IO.Path]::DirectorySeparatorChar)) {
+    $userProfile += [System.IO.Path]::DirectorySeparatorChar
+}
+
+if (-not $fullSettingsPath.StartsWith($userProfile, [System.StringComparison]::OrdinalIgnoreCase)) {
+    Throw "SettingsPath must be within the user profile ($userProfile)"
+}
+
 # Ensure settings directory exists
-$settingsDir = Split-Path -Parent $SettingsPath
+$settingsDir = Split-Path -Parent $fullSettingsPath
 if (-not (Test-Path $settingsDir)) {
     New-Item -ItemType Directory -Path $settingsDir -Force | Out-Null
 }
 
 # Backup current settings
-$backupPath = "$SettingsPath.backup"
-if (Test-Path $SettingsPath) {
+$backupPath = "$fullSettingsPath.backup"
+if (Test-Path $fullSettingsPath) {
     Write-Host "[INFO] Backing up settings..." -ForegroundColor Gray
-    Copy-Item $SettingsPath $backupPath -Force
+    Copy-Item $fullSettingsPath $backupPath -Force
     Write-Host "       Backup saved to: $backupPath" -ForegroundColor DarkGray
 }
 
 # Load existing settings if they exist
 $existingSettings = $null
-if (Test-Path $SettingsPath) {
+if (Test-Path $fullSettingsPath) {
     try {
-        $existingSettings = Get-Content $SettingsPath -Raw | ConvertFrom-Json
+        $existingSettings = Get-Content $fullSettingsPath -Raw | ConvertFrom-Json
     } catch {
         Write-Host "[WARN] Could not parse existing settings, creating new config" -ForegroundColor Yellow
     }
@@ -132,7 +158,7 @@ if ($Mode -eq 'paid') {
 }
 
 # Save settings
-$settings | ConvertTo-Json -Depth 10 | Set-Content $SettingsPath -Encoding utf8
+$settings | ConvertTo-Json -Depth 10 | Set-Content $fullSettingsPath -Encoding utf8
 
 Write-Host ""
 Write-Host "[TIP] Restart your terminal or run '. `$PROFILE' to reload environment" -ForegroundColor Yellow
